@@ -34,3 +34,27 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Runbook
+
+- Node: 20.x
+- Package manager: pnpm
+
+### Local
+1) pnpm install
+2) pnpm dev → http://localhost:3000
+
+## Tech Stack
+- Next.js 14 (App Router), TypeScript
+- TailwindCSS (utility-first CSS)
+- Playwright (UI/API tests, POM ready)
+
+## Project structure
+/app        - Next.js App Router
+/lib        - utilities (env, session, db wrappers)
+/schemas    - Zod schemas
+/tests      - Playwright specs
+  /pages    - Page Object Models (POM)
+  /ui       - UI tests
+  /api      - API tests
+/public     - static assets
