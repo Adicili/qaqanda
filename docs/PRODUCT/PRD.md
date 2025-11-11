@@ -1,12 +1,14 @@
 # PRD — QAQ&A (v1.3)
 
 ## 1. Overview
+
 QAQ&A is a role-based web application that enables authenticated users to query, manage, and analyze an internal knowledge base. The system supports two roles: **QA Engineer** (read-only) and **QA Lead** (read + manage). All application data is stored in Databricks and accessed through the Databricks SQL Warehouse REST API.  
 All knowledge base modifications are processed through an AI model that converts freeform text into structured data.
 
 ---
 
 ## 2. Problem Statement
+
 QA information is often fragmented across multiple tools, documents, and communication channels, slowing down decision-making and test execution.  
 QA Engineers require fast and consistent access to validated knowledge.  
 QA Leads require the ability to maintain and update that knowledge without developer intervention.
@@ -14,6 +16,7 @@ QA Leads require the ability to maintain and update that knowledge without devel
 ---
 
 ## 3. Product Goals
+
 - Provide fast, natural-language querying over internal QA knowledge.
 - Centralize documentation in a single, structured, editable knowledge base.
 - Enforce role-based access for content management.
@@ -24,14 +27,14 @@ QA Leads require the ability to maintain and update that knowledge without devel
 
 ## 4. Roles & Permissions
 
-| Capability | QA Engineer | QA Lead |
-|------------|-------------|---------|
-| Login / Register | ✅ | ✅ |
-| Ask questions | ✅ | ✅ |
-| View reports | ✅ | ✅ |
-| Add new KB entries | ❌ | ✅ |
-| Update existing KB entries | ❌ | ✅ |
-| View audit history | ❌ | ✅ |
+| Capability                 | QA Engineer | QA Lead |
+| -------------------------- | ----------- | ------- |
+| Login / Register           | ✅          | ✅      |
+| Ask questions              | ✅          | ✅      |
+| View reports               | ✅          | ✅      |
+| Add new KB entries         | ❌          | ✅      |
+| Update existing KB entries | ❌          | ✅      |
+| View audit history         | ❌          | ✅      |
 
 Default role after registration: `QA Engineer`  
 Role upgrades to `QA Lead` are handled manually via database or admin script (not via UI in MVP).
@@ -41,6 +44,7 @@ Role upgrades to `QA Lead` are handled manually via database or admin script (no
 ## 5. Core Features
 
 ### F1 — Authentication & Authorization
+
 - Registration via email + password
 - Passwords stored as bcrypt hashes
 - Login sets HTTP-only session cookie
@@ -49,15 +53,17 @@ Role upgrades to `QA Lead` are handled manually via database or admin script (no
   - role access for restricted pages and APIs
 
 ### F2 — Knowledge Querying
+
 - User enters a natural-language question
 - System retrieves top KB docs via TF-IDF retrieval (v1)
 - Response includes:
-    answer: string
-    context: KB entries[]
-    latency_ms: number
+  answer: string
+  context: KB entries[]
+  latency_ms: number
 - Every query logged to Databricks
 
 ### F3 — Knowledge Management (Lead only)
+
 - Lead enters freeform prompt describing a new or updated document
 - AI model converts prompt → `{ title, text, tags[] }`
 - Result stored in `kb_docs`
@@ -65,6 +71,7 @@ Role upgrades to `QA Lead` are handled manually via database or admin script (no
 - All changes linked to user ID
 
 ### F4 — Reports
+
 - All authenticated users can view usage analytics:
 - total queries
 - top questions
@@ -75,24 +82,24 @@ Role upgrades to `QA Lead` are handled manually via database or admin script (no
 
 ## 6. Non-Functional Requirements
 
-| Category | Requirement |
-|----------|-------------|
-| Session Security | HTTP-only cookie, SameSite=Lax |
-| Password Policy | Min 8 chars, 1 number, 1 special character |
-| Database | All queries executed through Databricks SQL REST API |
-| Auditability | All KB changes must have diff record in `kb_audit` |
-| Max Query Latency | ≤ 1500ms without LLM |
-| Availability | App must work without LLM; only KB edit depends on it |
-| Error Handling | API responses must use explicit status codes and JSON body |
-| Testing | UI (Playwright) + API (Playwright request) |
-| CI/CD | Tests must execute in headless environment |
-| Data Limits | Max KB entry text: 5000 chars; max 10 tags per entry |
+| Category          | Requirement                                                |
+| ----------------- | ---------------------------------------------------------- |
+| Session Security  | HTTP-only cookie, SameSite=Lax                             |
+| Password Policy   | Min 8 chars, 1 number, 1 special character                 |
+| Database          | All queries executed through Databricks SQL REST API       |
+| Auditability      | All KB changes must have diff record in `kb_audit`         |
+| Max Query Latency | ≤ 1500ms without LLM                                       |
+| Availability      | App must work without LLM; only KB edit depends on it      |
+| Error Handling    | API responses must use explicit status codes and JSON body |
+| Testing           | UI (Playwright) + API (Playwright request)                 |
+| CI/CD             | Tests must execute in headless environment                 |
+| Data Limits       | Max KB entry text: 5000 chars; max 10 tags per entry       |
 
 ---
 
 ## 7. Database Schema (Databricks)
 
-```sql
+````sql
 CREATE TABLE users (
 id STRING PRIMARY KEY,
 email STRING UNIQUE NOT NULL,
@@ -165,33 +172,33 @@ created_at TIMESTAMP DEFAULT current_timestamp()
   "text": "...",
   "tags": ["...", "..."]
 }
-```
+````
+
 - Invalid or ambiguous output must be rejected with validation error
 
 - AI-generated data must not overwrite existing data without audit logging
 
-
 ## 11. Release Plan
 
-| Phase | Deliverables |
-|--------|--------------|
-| Phase 1 | Auth, Ask page, TF-IDF retrieval, query logging |
+| Phase   | Deliverables                                             |
+| ------- | -------------------------------------------------------- |
+| Phase 1 | Auth, Ask page, TF-IDF retrieval, query logging          |
 | Phase 2 | KB add/update with AI, audit logging, Databricks storage |
-| Phase 3 | Reports page with live analytics |
-| Phase 4 | Playwright UI + API test suite |
-| Phase 5 | CI/CD pipeline integration |
+| Phase 3 | Reports page with live analytics                         |
+| Phase 4 | Playwright UI + API test suite                           |
+| Phase 5 | CI/CD pipeline integration                               |
 
 ---
 
 ## 12. Risks & Mitigations
 
-| Risk | Mitigation |
-|-------|------------|
-| Databricks latency | Reduce round-trips, batch writes |
-| LLM hallucination | Strict schema validation + enforced types |
-| Poor prompt quality | UI guidance + backend validation |
-| Session fixation | Regenerate session ID on login |
-| Retrieval scaling | Replace TF-IDF with embeddings in future release |
+| Risk                | Mitigation                                       |
+| ------------------- | ------------------------------------------------ |
+| Databricks latency  | Reduce round-trips, batch writes                 |
+| LLM hallucination   | Strict schema validation + enforced types        |
+| Poor prompt quality | UI guidance + backend validation                 |
+| Session fixation    | Regenerate session ID on login                   |
+| Retrieval scaling   | Replace TF-IDF with embeddings in future release |
 
 ---
 

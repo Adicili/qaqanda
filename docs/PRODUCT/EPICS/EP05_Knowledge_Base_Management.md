@@ -1,11 +1,13 @@
 # EP05 — Knowledge Base Management (Lead)
 
 ## Epic Description
+
 This epic enables QA Leads to manage the application's knowledge base (KB).  
 It includes adding and updating KB entries using AI (LLM), auditing all changes, and enforcing access control for the Lead role only.  
 This feature expands the system’s core knowledge and ensures that QA Engineers can query an up-to-date KB.
 
 ### Epic Completion Criteria
+
 - QA Lead can add and update KB entries via UI and API
 - All operations validated and authorized (Lead role only)
 - Each change generates an audit entry in Databricks
@@ -17,9 +19,11 @@ This feature expands the system’s core knowledge and ensures that QA Engineers
 ## EP05-US01 — Add Knowledge Base Entry via AI (5 pts)
 
 ### Description
+
 As a **QA Lead**, I want to create new KB entries using AI so that the system can expand its stored knowledge automatically.
 
 ### Acceptance Criteria
+
 - Endpoint `/api/kb/add` requires Lead role
 - Request body `{ prompt: string }` used to generate new KB entry
 - LLM must return JSON with fields `{ title, text, tags[] }`
@@ -28,6 +32,7 @@ As a **QA Lead**, I want to create new KB entries using AI so that the system ca
 - KB entry stored in `kb_docs` table
 
 ### Tasks
+
 - **EP05-US01-T01 — Create `/api/kb/add` endpoint**
   1. File: `app/api/kb/add/route.ts`
   2. Auth check: role === 'LEAD' only
@@ -57,6 +62,7 @@ As a **QA Lead**, I want to create new KB entries using AI so that the system ca
   - UI flow works (prompt → generate → confirm → success)
 
 ### Deliverables
+
 ```
 app/api/kb/add/route.ts
 app/kb/page.tsx
@@ -70,9 +76,11 @@ tests/ui/kb-add.spec.ts
 ## EP05-US02 — Update Knowledge Base Entry via AI (5 pts)
 
 ### Description
+
 As a **QA Lead**, I want to modify existing KB entries with AI assistance so that content remains accurate and up-to-date.
 
 ### Acceptance Criteria
+
 - Endpoint `/api/kb/update` requires Lead role
 - Request body `{ id, prompt }` used to generate updated entry
 - LLM response must match strict JSON schema
@@ -81,6 +89,7 @@ As a **QA Lead**, I want to modify existing KB entries with AI assistance so tha
 - Invalid output rejected without data overwrite
 
 ### Tasks
+
 - **EP05-US02-T01 — Create `/api/kb/update` endpoint**
   1. File: `app/api/kb/update/route.ts`
   2. Validate input `{ id, prompt }`
@@ -103,6 +112,7 @@ As a **QA Lead**, I want to modify existing KB entries with AI assistance so tha
   - Non-Lead → 403
 
 ### Deliverables
+
 ```
 app/api/kb/update/route.ts
 app/kb/page.tsx (extended with edit functionality)
@@ -113,6 +123,7 @@ tests/ui/kb-update.spec.ts
 ---
 
 ## ✅ EP05 Epic Done When
+
 - Lead users can add and update KB entries
 - AI outputs validated strictly (JSON schema enforced)
 - All changes logged in audit table

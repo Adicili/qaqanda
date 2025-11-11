@@ -1,0 +1,19 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals", "plugin:import/recommended", "prettier"],
+  "plugins": ["import"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourcceType": "module"
+  },
+  "settings": {
+    "next": {
+      "rootDir": ["./"]
+    }
+  },
+  "rules": {
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "import/order": ["warn", { "newlines-between": "always" }]
+  },
+  "ignorePatterns": ["node_modules/", ".next/", "playwright-report/", "test-results/"]
+}

@@ -1,11 +1,13 @@
 # EP06 — Reports & Analytics
 
 ## Epic Description
+
 This epic adds reporting and analytics capabilities to the QAQ&A platform.  
 It provides an API endpoint and UI for visualizing key usage metrics such as total queries, top questions, latency statistics, and knowledge base engagement.  
 The goal is to help QA Leads and Engineers monitor platform effectiveness and usage patterns.
 
 ### Epic Completion Criteria
+
 - Reports API aggregates live query and KB data from Databricks
 - Reports UI displays data as readable charts and summary cards
 - Only authenticated users (Engineer or Lead) can access reports
@@ -17,9 +19,11 @@ The goal is to help QA Leads and Engineers monitor platform effectiveness and us
 ## EP06-US01 — Reports Summary API (3 pts)
 
 ### Description
+
 As a developer, I need an endpoint that provides summary statistics so that the Reports UI can display real-time platform metrics.
 
 ### Acceptance Criteria
+
 - Endpoint: `/api/reports/summary`
 - Auth required: Engineer or Lead
 - Returns JSON with keys:  
@@ -28,6 +32,7 @@ As a developer, I need an endpoint that provides summary statistics so that the 
 - Returns empty arrays if no data
 
 ### Tasks
+
 - **EP06-US01-T01 — Implement `/api/reports/summary`**
   1. File: `app/api/reports/summary/route.ts`
   2. Validate user session and role (Engineer or Lead)
@@ -44,6 +49,7 @@ As a developer, I need an endpoint that provides summary statistics so that the 
   - Empty DB → default zeros
 
 ### Deliverables
+
 ```
 app/api/reports/summary/route.ts
 tests/api/reports-summary.spec.ts
@@ -54,9 +60,11 @@ tests/api/reports-summary.spec.ts
 ## EP06-US02 — Reports Dashboard UI (3 pts)
 
 ### Description
+
 As an authenticated user, I want to view usage analytics in a simple dashboard so I can understand how the platform is performing.
 
 ### Acceptance Criteria
+
 - Route `/reports`
 - Accessible only to authenticated users
 - Displays key metrics:
@@ -69,6 +77,7 @@ As an authenticated user, I want to view usage analytics in a simple dashboard s
 - Shows “No data available” message when empty
 
 ### Tasks
+
 - **EP06-US02-T01 — Create Reports UI page**
   1. File: `app/reports/page.tsx`
   2. Fetch data from `/api/reports/summary`
@@ -82,6 +91,7 @@ As an authenticated user, I want to view usage analytics in a simple dashboard s
   - No data → displays empty state message
 
 ### Deliverables
+
 ```
 app/reports/page.tsx
 tests/ui/reports.spec.ts
@@ -90,6 +100,7 @@ tests/ui/reports.spec.ts
 ---
 
 ## ✅ EP06 Epic Done When
+
 - `/api/reports/summary` returns valid JSON data
 - `/reports` page renders analytics correctly
 - Access restricted to authenticated users

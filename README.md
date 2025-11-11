@@ -41,20 +41,23 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 - Package manager: pnpm
 
 ### Local
-1) pnpm install
-2) pnpm dev → http://localhost:3000
+
+1. pnpm install
+2. pnpm dev → http://localhost:3000
 
 ## Tech Stack
+
 - Next.js 14 (App Router), TypeScript
 - TailwindCSS (utility-first CSS)
 - Playwright (UI/API tests, POM ready)
 
 ## Project structure
-/app        - Next.js App Router
-/lib        - utilities (env, session, db wrappers)
-/schemas    - Zod schemas
-/tests      - Playwright specs
-  /pages    - Page Object Models (POM)
-  /ui       - UI tests
-  /api      - API tests
-/public     - static assets
+
+/app - Next.js App Router
+/lib - utilities (env, session, db wrappers)
+/schemas - Zod schemas
+/tests - Playwright specs
+/pages - Page Object Models (POM)
+/ui - UI tests
+/api - API tests
+/public - static assets

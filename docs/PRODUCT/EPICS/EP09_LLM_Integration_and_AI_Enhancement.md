@@ -1,11 +1,13 @@
 # EP09 — LLM Integration & AI Enhancement
 
 ## Epic Description
+
 This epic integrates a Large Language Model (LLM) into QAQ&A to enhance the knowledge base and question-answering capabilities.  
 It replaces the placeholder AI logic used in previous epics with a real model connection and strict JSON schema validation.  
 The LLM will assist QA Leads in creating and updating KB entries, and will also generate improved answers on the Ask page.
 
 ### Epic Completion Criteria
+
 - LLM integrated via `lib/llm.ts`
 - AI used for `/api/kb/add`, `/api/kb/update`, and `/api/ask`
 - Responses strictly validated against JSON schema
@@ -18,15 +20,18 @@ The LLM will assist QA Leads in creating and updating KB entries, and will also 
 ## EP09-US01 — LLM Client & Config (3 pts)
 
 ### Description
+
 As a developer, I need a reusable LLM client that supports configurable prompts, error handling, and response validation, so all AI features can use a unified interface.
 
 ### Acceptance Criteria
+
 - `lib/llm.ts` provides a single `callLLM(prompt, schema)` function
 - Uses `OPENAI_API_KEY` and `OPENAI_MODEL` from environment
 - Returns parsed JSON output only if valid
 - Catches and logs errors gracefully
 
 ### Tasks
+
 - **EP09-US01-T01 — Implement LLM client**
   1. File: `lib/llm.ts`
   2. Use `fetch()` to call OpenAI API (or compatible endpoint)
@@ -54,6 +59,7 @@ As a developer, I need a reusable LLM client that supports configurable prompts,
   - Validate parsing + error handling
 
 ### Deliverables
+
 ```
 lib/llm.ts
 lib/validators/llmOutput.ts
@@ -66,9 +72,11 @@ tests/unit/llm.spec.ts
 ## EP09-US02 — LLM Integration in `/api/ask` (5 pts)
 
 ### Description
+
 As a user, I want my questions to return LLM-enhanced answers using the knowledge base context, so I receive richer and more accurate responses.
 
 ### Acceptance Criteria
+
 - `/api/ask` combines TF-IDF results with LLM summarization
 - Request to LLM includes top 3 docs as context
 - Response includes both AI-generated answer and context
@@ -76,6 +84,7 @@ As a user, I want my questions to return LLM-enhanced answers using the knowledg
 - Latency recorded and logged
 
 ### Tasks
+
 - **EP09-US02-T01 — Extend `/api/ask` logic**
   1. Add call to `callLLM()` after TF-IDF results
   2. Prompt format:
@@ -94,6 +103,7 @@ As a user, I want my questions to return LLM-enhanced answers using the knowledg
   - Validate latency tracking
 
 ### Deliverables
+
 ```
 app/api/ask/route.ts (extended)
 tests/api/ask-llm.spec.ts
@@ -104,15 +114,18 @@ tests/api/ask-llm.spec.ts
 ## EP09-US03 — AI-Assisted KB Operations (5 pts)
 
 ### Description
+
 As a QA Lead, I want AI to automatically draft and improve KB entries based on prompts, ensuring quality and consistency.
 
 ### Acceptance Criteria
+
 - `/api/kb/add` and `/api/kb/update` use real LLM output
 - Output validated using JSON schema
 - Invalid responses trigger 400 with explicit message
 - Audit log includes LLM model and timestamp
 
 ### Tasks
+
 - **EP09-US03-T01 — Update `/api/kb/add` and `/api/kb/update`**
   - Replace placeholder logic with real `callLLM()`
   - Validate result before DB write
@@ -128,6 +141,7 @@ As a QA Lead, I want AI to automatically draft and improve KB entries based on p
   - Missing permission → 403
 
 ### Deliverables
+
 ```
 app/api/kb/add/route.ts
 app/api/kb/update/route.ts
@@ -138,6 +152,7 @@ tests/api/kb-llm.spec.ts
 ---
 
 ## ✅ EP09 Epic Done When
+
 - LLM client fully functional and tested
 - AI enhances `/ask`, `/kb/add`, and `/kb/update`
 - Validation strict and error-proof

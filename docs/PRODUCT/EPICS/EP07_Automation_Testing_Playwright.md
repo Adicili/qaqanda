@@ -1,11 +1,13 @@
 # EP07 — Automation Testing (Playwright)
 
 ## Epic Description
+
 This epic sets up and expands the Playwright-based test automation framework for QAQ&A.  
 It includes creating Page Object Models (POM) for UI, reusable helpers for authentication, and building complete test coverage for critical user flows across both UI and API.  
 The result will be a maintainable automated test suite integrated with CI/CD.
 
 ### Epic Completion Criteria
+
 - Base POM structure implemented
 - Core UI pages covered by Page Objects
 - API tests implemented for auth and core flows
@@ -18,15 +20,18 @@ The result will be a maintainable automated test suite integrated with CI/CD.
 ## EP07-US01 — Page Object Model (POM) Foundation (3 pts)
 
 ### Description
+
 As a QA engineer, I need a Page Object Model structure so that UI tests are maintainable, reusable, and scalable.
 
 ### Acceptance Criteria
+
 - Base POM folder structure created
 - Each core page (Login, Register, Ask, KB, Reports) has its own class
 - POM methods use `data-test-id` selectors
 - Auth helper available for test login bypass
 
 ### Tasks
+
 - **EP07-US01-T01 — Create BasePage and Page classes**
   1. Folder: `tests/pages/`
   2. Create `BasePage.ts` with common actions (goto, click, fill, wait)
@@ -46,6 +51,7 @@ As a QA engineer, I need a Page Object Model structure so that UI tests are main
   - Open homepage, check title, ensure AskPage loads
 
 ### Deliverables
+
 ```
 tests/pages/BasePage.ts
 tests/pages/LoginPage.ts
@@ -62,15 +68,18 @@ tests/ui/pom-smoke.spec.ts
 ## EP07-US02 — Authentication Flow Tests (3 pts)
 
 ### Description
+
 As a QA engineer, I need automated tests for registration and login flows to ensure the authentication system works correctly for both positive and negative cases.
 
 ### Acceptance Criteria
+
 - Registration happy path test passes
 - Duplicate registration fails with 409
 - Login happy and invalid credentials cases covered
 - Middleware protection verified (redirects unauthenticated users)
 
 ### Tasks
+
 - **EP07-US02-T01 — Create registration flow tests**
   - File: `tests/ui/register-flow.spec.ts`
   - Covers success, duplicate, and invalid form cases
@@ -84,6 +93,7 @@ As a QA engineer, I need automated tests for registration and login flows to ens
   - Authenticated → access allowed
 
 ### Deliverables
+
 ```
 tests/ui/register-flow.spec.ts
 tests/ui/login-flow.spec.ts
@@ -95,10 +105,12 @@ tests/ui/middleware-redirect.spec.ts
 ## EP07-US03 — Core Application Flow Tests (5 pts)
 
 ### Description
+
 As a QA engineer, I need end-to-end automation for the primary user journeys: asking a question, managing KB entries, and viewing reports.  
 These tests ensure the core business flows remain functional after every release.
 
 ### Acceptance Criteria
+
 - Ask flow tested: submit → receive answer → context shown
 - KB add/update flows tested (Lead only)
 - Reports UI loads and displays data
@@ -106,6 +118,7 @@ These tests ensure the core business flows remain functional after every release
 - CI runtime < 10 minutes
 
 ### Tasks
+
 - **EP07-US03-T01 — Implement Ask flow test**
   - File: `tests/ui/ask-flow.spec.ts`
   - Steps: login, submit question, validate answer + context
@@ -128,6 +141,7 @@ These tests ensure the core business flows remain functional after every release
   - Configure `playwright.config.ts` to run subsets via `--grep`
 
 ### Deliverables
+
 ```
 tests/ui/ask-flow.spec.ts
 tests/ui/kb-flows.spec.ts
@@ -138,6 +152,7 @@ playwright.config.ts (updated with tags)
 ---
 
 ## ✅ EP07 Epic Done When
+
 - POM classes exist and functional
 - Auth flows fully automated
 - Ask, KB, and Reports journeys covered
