@@ -1,3 +1,3 @@
-import React from 'react';
-console.log('trash');
-export default 1 as any;
+export default function Ok() {
+  return null;
+}
