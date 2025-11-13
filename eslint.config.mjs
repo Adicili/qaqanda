@@ -1,18 +1,33 @@
-import { defineConfig, globalIgnores } from 'eslint/config';
-import nextVitals from 'eslint-config-next/core-web-vitals';
-import nextTs from 'eslint-config-next/typescript';
+// eslint.config.mjs
+import { defineConfig } from 'eslint/config';
+import next from 'eslint-config-next';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    '.next/**',
-    'out/**',
-    'build/**',
-    'next-env.d.ts',
-  ]),
+export default defineConfig([
+  ...next,
+
+  {
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+    },
+    rules: {
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'import/order': ['warn', { 'newlines-between': 'always' }],
+    },
+  },
+
+  eslintConfigPrettier,
+
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'out/**',
+      'build/**',
+      'playwright-report/**',
+      'test-results/**',
+    ],
+  },
 ]);
-
-export default eslintConfig;

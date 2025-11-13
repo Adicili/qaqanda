@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write .",
-    "prepare": "husky install"
+    "format": "prettier --write ."
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,json,css,md}": [
