@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "qa:test": "vitest run --reporter=verbose",
+    "qa:test:watch": "vitest"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,css,md}": [
