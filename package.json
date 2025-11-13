@@ -10,10 +10,10 @@
     "format": "prettier --write ."
   },
   "lint-staged": {
-    "*.{ts,tsx,js,jsx,json,css,md}": [
+    "**/*.{ts,tsx,js,jsx,json,css,md}": [
       "prettier --write"
     ],
-    "*.{ts,tsx}": [
+    "**/*.{ts,tsx}": [
       "eslint --max-warnings=0"
     ]
   },

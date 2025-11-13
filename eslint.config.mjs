@@ -14,7 +14,9 @@ export default defineConfig([
     },
     rules: {
       'no-console': ['error', { allow: ['warn', 'error'] }],
+      'no-duplicate-imports': 'error',
       'import/order': ['warn', { 'newlines-between': 'always' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
 
