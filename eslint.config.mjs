@@ -33,7 +33,7 @@ export default defineConfig([
       'build/**',
       'playwright-report/**',
       'test-results/**',
-      'tmp-lint-violation/**'
+      'tmp-lint-violation/**',
     ],
   },
 ]);

@@ -39,13 +39,19 @@ describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
     await $(`git add ${BAD_FILE}`);
     let failed = false;
     try {
-      // Do not pass --no-verify; we WANT the hook to run
       await $(`git commit -m "test: provoke lint fail"`, { env: { ...process.env, HUSKY: '1' } });
     } catch (e: any) {
       failed = true;
       const out = (e.stdout || '') + (e.stderr || '');
-      // Sanity: show it really was ESLint that stopped the commit
       expect(out).toMatch(/no-console|no-unused-vars|ESLint/i);
+    } finally {
+      // 🔥 hard cleanup so other tests don't see the bad file
+      try {
+        execSync(`git reset --hard`);
+      } catch {}
+      try {
+        execSync(`git clean -fd tmp-lint-violation`);
+      } catch {}
     }
     expect(failed).toBe(true);
   });
