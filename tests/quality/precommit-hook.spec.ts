@@ -1,57 +1,66 @@
 import { exec, execSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 const $ = promisify(exec);
-const TMP_DIR = 'tmp-lint-violation';
-const BAD_FILE = `${TMP_DIR}/bad.tsx`;
+
+// choose a real source dir that Husky/ESLint will lint
+const SRC_DIR = existsSync('src/app') ? 'src/app' : existsSync('app') ? 'app' : null;
+if (!SRC_DIR) {
+  throw new Error('No app directory found (src/app or app). Create one so hooks can lint it.');
+}
+const BAD_FILE = join(SRC_DIR, '__qa_bad__.tsx');
 
 function safeGit(cmd: string) {
   try {
     execSync(cmd, { stdio: 'pipe' });
-  } catch {}
+  } catch {
+    /* ignore */
+  }
 }
 
 beforeEach(() => {
-  mkdirSync(TMP_DIR, { recursive: true });
+  mkdirSync(dirname(BAD_FILE), { recursive: true });
   safeGit(`git config user.email "qa@example.com"`);
   safeGit(`git config user.name "QA Bot"`);
+  // ensure we start from a clean index each test
+  safeGit(`git reset -- ${BAD_FILE}`);
 });
 
 afterEach(() => {
-  safeGit(`git reset --hard -- ${TMP_DIR}`);
-  safeGit(`git clean -fd ${TMP_DIR}`);
-  rmSync(TMP_DIR, { recursive: true, force: true });
+  // hard revert this file only, never the whole repo
+  safeGit(`git restore --staged --worktree -- ${BAD_FILE}`);
+  safeGit(`git checkout -- ${BAD_FILE}`);
 });
 
 describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
   it('commit with violations MUST fail due to husky/lint-staged', async () => {
+    // Unused import + forbidden console.log to trip your rules
     writeFileSync(
       BAD_FILE,
-      `import React from 'react';\nconsole.log('trash');\nexport default 1 as any;\n`,
+      `import React from 'react';\nconsole.log('trash')\nexport default function Bad(){ return null }\n`,
       'utf8',
     );
 
-    await $(`git add ${BAD_FILE}`);
+    await $(`git add "${BAD_FILE}"`);
     let failed = false;
     try {
       await $(`git commit -m "test: provoke lint fail"`, { env: { ...process.env, HUSKY: '1' } });
     } catch (e: any) {
       failed = true;
       const out = (e.stdout || '') + (e.stderr || '');
+      // prove ESLint actually blocked it
       expect(out).toMatch(/ESLint|no-console|no-unused-vars/i);
     }
     expect(failed).toBe(true);
   });
 
   it('after fixing issues, commit MUST succeed', async () => {
-    mkdirSync(dirname(BAD_FILE), { recursive: true });
-    writeFileSync(`${BAD_FILE}`, `export default function Ok(){ return null }\n`, 'utf8');
-
-    await $(`git add ${BAD_FILE}`);
+    writeFileSync(BAD_FILE, `export default function Ok(){ return null }\n`, 'utf8');
+    await $(`git add "${BAD_FILE}"`);
     const { stdout } = await $(`git commit -m "chore: fix lint"`, {
       env: { ...process.env, HUSKY: '1' },
     });
