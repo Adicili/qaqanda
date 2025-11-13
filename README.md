@@ -1,63 +1,132 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# QAQandA App
 
-## Getting Started
+Internal QA & Knowledge Management tool built with **Next.js (App Router)**, **TypeScript**, **TailwindCSS**, and **Playwright**.  
+Project adheres to EP01 setup and follows strict linting, testing, and CI/CD standards.
 
-First, run the development server:
+---
+
+## 🧰 Prerequisites
+
+| Tool       | Version   |
+| ---------- | --------- |
+| Node.js    | >= 20.x   |
+| pnpm       | >= 10.x   |
+| TypeScript | >= 5.x    |
+| Playwright | >= 1.48.x |
+
+> Check your setup:
+>
+> ```bash
+> node -v
+> pnpm -v
+> ```
+
+---
+
+## ⚙️ Setup & Run
+
+### 1. Install dependencies
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Run in development mode
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+App starts on [http://localhost:3000](http://localhost:3000).
 
-## Learn More
+### 3. Build for production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm build && pnpm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🧪 Testing
 
-## Deploy on Vercel
+### Run Playwright tests
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+pnpm playwright test
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Run TypeScript type check
 
-## Runbook
+```bash
+pnpm tsc --noEmit
+```
 
-- Node: 20.x
-- Package manager: pnpm
+### Run ESLint & Prettier
 
-### Local
+```bash
+pnpm lint
+pnpm format
+```
 
-1. pnpm install
-2. pnpm dev → http://localhost:3000
+Pre-commit hook enforces lint + format automatically.
 
-## Tech Stack
+---
 
-- Next.js 14 (App Router), TypeScript
-- TailwindCSS (utility-first CSS)
-- Playwright (UI/API tests, POM ready)
+## 🧱 Project Structure
 
-## Project structure
+```
+/app       → Next.js App Router
+/lib       → Utilities (env, session, db wrappers)
+/schemas   → Zod schemas & DTO definitions
+/tests     → Playwright tests
+  /ui      → UI smoke & regression
+  /api     → API & integration tests
+  /pages   → Page Object Models (POM)
+/public    → Static assets
+```
 
-/app - Next.js App Router
-/lib - utilities (env, session, db wrappers)
-/schemas - Zod schemas
-/tests - Playwright specs
-/pages - Page Object Models (POM)
-/ui - UI tests
-/api - API tests
-/public - static assets
+---
+
+## 🎨 Styling
+
+TailwindCSS (utility-first).  
+Edit styles in `app/globals.css` and configure paths in `tailwind.config.js`.
+
+---
+
+## 🧩 Tooling
+
+| Tool        | Purpose                                    |
+| ----------- | ------------------------------------------ |
+| ESLint      | Code linting                               |
+| Prettier    | Formatting                                 |
+| Husky       | Git hooks (pre-commit)                     |
+| Lint-Staged | Runs lint on staged files                  |
+| Playwright  | End-to-end testing                         |
+| CI/CD       | GitHub Actions integration planned in EP08 |
+
+---
+
+## 🧭 Runbook
+
+| Command             | Description          |
+| ------------------- | -------------------- |
+| `pnpm install`      | Install dependencies |
+| `pnpm dev`          | Run local dev server |
+| `pnpm build`        | Production build     |
+| `pnpm lint`         | Run ESLint           |
+| `pnpm format`       | Format code          |
+| `pnpm test`         | Run Playwright suite |
+| `pnpm tsc --noEmit` | Type check only      |
+
+---
+
+## 🧾 Notes
+
+- Environment variables: define in `.env.local` (ignored by Git).
+- Git hooks auto-run lint & format before every commit.
+- Code style follows **Next.js + Prettier** conventions.
+
+---
+
+💡 _Maintained as part of EP01 – Project Foundation and Tooling._
