@@ -1,41 +1,46 @@
 import { exec, execSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { dirname } from 'node:path';
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 const $ = promisify(exec);
 
-const TMP = 'tmp-lint-violation';
-const BAD_FILE = `${TMP}/bad.tsx`;
+const TMP_DIR = 'tmp-lint-violation';
+const BAD_FILE = `${TMP_DIR}/bad.tsx`;
+
+function safeGit(cmd: string) {
+  try {
+    execSync(cmd, { stdio: 'pipe' });
+  } catch {
+    /* ignore */
+  }
+}
+
+beforeEach(() => {
+  // Ensure tmp folder exists fresh for each test
+  mkdirSync(TMP_DIR, { recursive: true });
+  // Safe local identity for CI / Windows runners
+  safeGit(`git config user.email "qa@example.com"`);
+  safeGit(`git config user.name "QA Bot"`);
+});
+
+afterEach(() => {
+  // Hard cleanup ONLY for the temp dir so we don't nuke the repo
+  safeGit(`git reset --hard -- ${TMP_DIR}`);
+  safeGit(`git clean -fd ${TMP_DIR}`);
+  rmSync(TMP_DIR, { recursive: true, force: true });
+});
 
 describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
-  beforeAll(() => {
-    mkdirSync(TMP, { recursive: true });
-    // Unused import + forbidden console.log (should trip your ESLint rules)
+  it('commit with violations MUST fail due to husky/lint-staged', async () => {
     writeFileSync(
       BAD_FILE,
       `import React from 'react';\nconsole.log('trash');\nexport default 1 as any;\n`,
       'utf8',
     );
 
-    // Safe local git identity for CI
-    try {
-      execSync(`git config user.email "qa@example.com"`);
-    } catch {}
-    try {
-      execSync(`git config user.name "QA Bot"`);
-    } catch {}
-  });
-
-  afterAll(() => {
-    try {
-      execSync(`git reset --hard`);
-    } catch {}
-    rmSync(TMP, { recursive: true, force: true });
-  });
-
-  it('commit with violations MUST fail due to husky/lint-staged', async () => {
     await $(`git add ${BAD_FILE}`);
     let failed = false;
     try {
@@ -44,22 +49,15 @@ describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
       failed = true;
       const out = (e.stdout || '') + (e.stderr || '');
       expect(out).toMatch(/no-console|no-unused-vars|ESLint/i);
-    } finally {
-      // 🔥 hard cleanup so other tests don't see the bad file
-      try {
-        execSync(`git reset --hard`);
-      } catch {}
-      try {
-        execSync(`git clean -fd tmp-lint-violation`);
-      } catch {}
     }
     expect(failed).toBe(true);
   });
 
   it('after fixing issues, commit MUST succeed', async () => {
+    // Recreate dir in case a previous test cleaned it
+    mkdirSync(dirname(BAD_FILE), { recursive: true });
     writeFileSync(BAD_FILE, `export default function Ok(){ return null }\n`, 'utf8');
     await $(`git add ${BAD_FILE}`);
-    // Should succeed now
     const { stdout } = await $(`git commit -m "chore: fix lint"`, {
       env: { ...process.env, HUSKY: '1' },
     });
