@@ -8,6 +8,19 @@ const baseSchema = z.object({
   DATABRICKS_TOKEN: z.string().min(1).optional(),
 
   OPENAI_API_KEY: z.string().min(1).optional(),
+
+  PORT: z.coerce.number().int().positive().optional(),
+  BASE_URL: z.string().url().optional(),
+  CI: z
+    .union([z.string(), z.boolean(), z.number()])
+    .transform((v) => {
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'number') return v !== 0;
+      const s = String(v).toLowerCase().trim();
+      return s === '1' || s === 'true' || s === 'yes';
+    })
+    .optional(),
+  EXPECTED_TITLE: z.string().min(1).optional(),
 });
 
 const parsed = baseSchema.safeParse(process.env);
@@ -32,4 +45,8 @@ export const ENV = {
   DATABRICKS_HOST: env.DATABRICKS_HOST,
   DATABRICKS_TOKEN: env.DATABRICKS_TOKEN,
   OPENAI_API_KEY: env.OPENAI_API_KEY,
+  PORT: env.PORT,
+  BASE_URL: env.BASE_URL,
+  CI: env.CI,
+  EXPECTED_TITLE: env.EXPECTED_TITLE,
 } as const;

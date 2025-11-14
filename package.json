@@ -10,7 +10,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "qa:test": "vitest run --reporter=verbose",
-    "qa:test:watch": "vitest"
+    "qa:test:watch": "vitest",
+    "test": "playwright test",
+    "test:report": "playwright show-report"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,css,md}": [
@@ -27,6 +29,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
