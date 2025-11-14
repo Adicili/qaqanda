@@ -284,3 +284,49 @@ Husky + lint-staged integration validated in precommit-hook.spec.ts.
 
 CI integration scheduled for EP08.
 ````
+
+## US03 — Environment Variable Validation
+
+### EP01-US03-TC01 — `.env.local.example` exists and includes placeholders
+
+**Result:** ✅ PASS
+
+**Evidence:**
+
+````bash
+pnpm qa:test
+# ...
+ ✓ tests/quality/env.spec.ts > US03 — Environment Variable Validation > EP01-US03-TC01: `.env.local.example` exists and includes placeholders 2ms
+# ...
+Notes:
+File present at the repository root containing the required placeholder keys:
+DATABRICKS_HOST, DATABRICKS_TOKEN, OPENAI_API_KEY.
+
+## EP01-US03-TC02 - **Title:** App fails fast if required env vars are missing
+
+**Result:** ✅ PASS
+
+**Evidence:**
+```bash
+$ pnpm qa:test
+# ...
+ ✓ tests/quality/env-runtime.spec.ts > US03 — Environment Variable Validation > EP01-US03-TC02: App fails fast if required env vars are missing 3672ms
+# ...
+Notes:
+Application startup correctly aborts when required environment variables are unset or missing.
+lib/env.ts throws a descriptive Zod validation error, confirming the runtime guard prevents invalid configuration.
+This ensures developers cannot run the app without proper .env.local setup.
+
+## EP01-US03-TC03 — **Title:** No direct `process.env` usage outside `lib/env.ts`
+
+**Result:** ✅ PASS
+
+**Evidence:**
+```bash
+$ pnpm qa:test
+ ✓ tests/quality/env-process-usage.spec.ts > US03 — Environment Variable Validation > EP01-US03-TC03: No direct process.env usage outside lib/env.ts 7ms
+
+Notes:
+Static analysis confirms that no source files outside lib/env.ts reference process.env.
+All environment variable access is centralized and validated through the Zod-based ENV object, guaranteeing runtime safety and consistent configuration boundaries across the app.
+````
