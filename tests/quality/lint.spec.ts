@@ -9,14 +9,15 @@ const execFileP = promisify(execFile);
 
 function walkForTS(root: string): string[] {
   const out: string[] = [];
-  function walk(dir: string) {
-    let entries: string[];
+  const skip = new Set(['node_modules', '.git', '.next', 'out', 'build', 'dist', 'coverage']);
+  const dive = (dir: string) => {
+    let items: string[] = [];
     try {
-      entries = readdirSync(dir);
+      items = readdirSync(dir);
     } catch {
       return;
     }
-    for (const name of entries) {
+    for (const name of items) {
       const p = join(dir, name);
       let st;
       try {
@@ -25,63 +26,70 @@ function walkForTS(root: string): string[] {
         continue;
       }
       if (st.isDirectory()) {
-        walk(p);
+        if (!skip.has(name)) dive(p);
       } else {
         const ext = extname(p).toLowerCase();
         if (ext === '.ts' || ext === '.tsx') out.push(p);
       }
     }
-  }
-  walk(root);
+  };
+  dive(root);
   return out;
 }
 
-async function getRealTsFiles(): Promise<string[]> {
-  // 1) Try Git for tracked .ts/.tsx
+async function collectTsFiles(): Promise<string[]> {
+  // Prefer git list if allowed
   try {
     const { stdout } = await execFileP('git', ['ls-files']);
-    const tracked = stdout
+    const files = stdout
       .split(/\r?\n/)
-      .filter((p) => p && (p.endsWith('.ts') || p.endsWith('.tsx')))
+      .filter(Boolean)
+      .filter((p) => p.endsWith('.ts') || p.endsWith('.tsx'))
       .filter((p) => existsSync(p));
-    if (tracked.length > 0) return tracked;
+    if (files.length) return files;
   } catch {
     // ignore
   }
 
-  // 2) Robust fallback: crawl common roots + explicitly add top-level configs
+  // Fallback: crawl likely roots
   const crawled = [
     ...walkForTS('src'),
     ...walkForTS('lib'),
     ...walkForTS('schemas'),
     ...walkForTS('tests'),
   ];
+  const extras = ['next.config.ts', 'vitest.config.ts', 'eslint.config.mjs'].filter(existsSync);
+  return Array.from(new Set([...crawled, ...extras]));
+}
 
-  const extras = ['next.config.ts', 'vitest.config.ts', 'eslint.config.mjs'].filter((p) =>
-    existsSync(p),
-  );
-
-  const files = Array.from(new Set([...crawled, ...extras]));
-  return files;
+async function run(cmd: string) {
+  try {
+    return await execFileP('bash', ['-lc', cmd]);
+  } catch {
+    const shell = process.env.COMSPEC || 'cmd';
+    return await execFileP(shell, ['/d', '/s', '/c', cmd]);
+  }
 }
 
 describe('US02-TC01: ESLint configured and passes cleanly', () => {
   it('eslint exits with code 0 on real TS/TSX files', async () => {
-    const files = await getRealTsFiles();
-
-    // Sanity: make sure we’re actually linting something
+    const files = await collectTsFiles();
     expect(files.length).toBeGreaterThan(0);
 
     const quoted = files.map((f) => `"${f.replace(/\\/g, '/')}"`).join(' ');
     const cmd = `pnpm eslint ${quoted} --ext .ts,.tsx --no-cache`;
 
-    const { stdout, stderr } = await execFileP('bash', ['-lc', cmd]).catch(async () => {
-      // Windows PowerShell fallback if bash isn't present
-      const { stdout: so, stderr: se } = await execFileP('cmd', ['/c', cmd]);
-      return { stdout: so, stderr: se };
-    });
-
-    // Should run ESLint, not crash, and print something ESLint-y
-    expect((stdout + stderr).toLowerCase()).toMatch(/eslint/);
+    try {
+      const { stdout, stderr } = await run(cmd);
+      // Clean runs can be silent; success is enough.
+      const out = (stdout + stderr).toLowerCase();
+      if (out.trim()) {
+        // If there is output, sanity check it's eslint-ish (not required, just guardrails)
+        expect(out).toMatch(/eslint|problems?|\d+:\d+/i);
+      }
+    } catch (err: any) {
+      const out = ((err?.stdout || '') + (err?.stderr || '')).trim();
+      throw new Error(out || 'eslint failed');
+    }
   });
 });

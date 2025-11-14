@@ -1,53 +1,114 @@
+import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { exec } from 'node:child_process';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { join, extname } from 'node:path';
 
 import { describe, it, expect } from 'vitest';
 
-const $ = promisify(exec);
+const execFileP = promisify(execFile);
 
-const ALLOWED_EXT = new Set([
-  'ts',
-  'tsx',
-  'js',
-  'jsx',
-  'json',
-  'md',
-  'mdx',
-  'css',
-  'mjs',
-  'cjs',
-  'yml',
-  'yaml',
-  'html',
-  // NOTE: we intentionally exclude svg, ico, sh, gitkeep, dotfiles, etc.
+// Prettier-handled extensions (skip junk like .gitattributes / .ico)
+const EXTS = new Set([
+  '.ts',
+  '.tsx',
+  '.js',
+  '.jsx',
+  '.json',
+  '.md',
+  '.css',
+  '.mjs',
+  '.cjs',
+  '.yml',
+  '.yaml',
+  '.html',
+  '.svg',
 ]);
 
-function hasAllowedExt(path: string) {
-  const m = path.toLowerCase().match(/\.([a-z0-9]+)$/i);
-  return !!m && ALLOWED_EXT.has(m[1]);
+const IGNORE_DIRS = new Set([
+  'node_modules',
+  '.git',
+  '.next',
+  'out',
+  'build',
+  'playwright-report',
+  'test-results',
+  'dist',
+  'coverage',
+]);
+
+function walk(root: string): string[] {
+  const out: string[] = [];
+  const dive = (dir: string) => {
+    let entries: string[] = [];
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const name of entries) {
+      const p = join(dir, name);
+      let st;
+      try {
+        st = statSync(p);
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) {
+        if (!IGNORE_DIRS.has(name)) dive(p);
+      } else {
+        const ext = extname(p).toLowerCase();
+        if (EXTS.has(ext)) out.push(p);
+      }
+    }
+  };
+  dive(root);
+  return out;
 }
 
-async function trackedFilesForPrettier(): Promise<string[]> {
-  const { stdout } = await $(`git ls-files`);
-  return (
-    stdout
+async function trackedFilesOrFallback(): Promise<string[]> {
+  // Prefer git if available
+  try {
+    const { stdout } = await execFileP('git', ['ls-files']);
+    const files = stdout
       .split(/\r?\n/)
-      .map((s) => s.trim())
       .filter(Boolean)
-      .filter(hasAllowedExt)
-      // don’t check lockfile or the QA bad file
-      .filter((p) => p !== 'pnpm-lock.yaml' && !p.endsWith('__qa_bad__.tsx'))
-  );
+      .filter((p) => EXTS.has(extname(p).toLowerCase()))
+      .filter((p) => existsSync(p));
+    if (files.length) return files;
+  } catch {
+    // ignore and fallback
+  }
+  // Fallback: crawl repo
+  return walk(process.cwd());
+}
+
+async function run(cmd: string) {
+  // Try bash (WSL/Git Bash); if not, use Windows cmd
+  try {
+    return await execFileP('bash', ['-lc', cmd]);
+  } catch {
+    const shell = process.env.COMSPEC || 'cmd';
+    return await execFileP(shell, ['/d', '/s', '/c', cmd]);
+  }
 }
 
 describe('US02-TC02: Prettier configured and enforces formatting', () => {
   it('prettier --check on tracked files is clean', async () => {
-    const files = await trackedFilesForPrettier();
-    if (files.length === 0) {
-      throw new Error('No eligible files for Prettier. Check ALLOWED_EXT.');
+    const files = await trackedFilesOrFallback();
+    expect(files.length).toBeGreaterThan(0);
+
+    const quoted = files.map((f) => `"${f.replace(/\\/g, '/')}"`).join(' ');
+    const cmd = `pnpm prettier --check ${quoted}`;
+
+    try {
+      const { stdout, stderr } = await run(cmd);
+      // Exit 0 == clean. Prettier can be silent; that’s fine.
+      const out = (stdout + stderr).toLowerCase();
+      expect(out).not.toMatch(/\[error]|no parser could be inferred/i);
+    } catch (err: any) {
+      // Non-zero means violations or config issues — surface the output
+      const out = ((err?.stdout || '') + (err?.stderr || '')).trim();
+      throw new Error(out || 'prettier failed');
     }
-    const cmd = `pnpm prettier --check --ignore-unknown ${files.map((f) => `"${f}"`).join(' ')}`;
-    const { stdout } = await $(cmd, { env: process.env });
-    expect(stdout).toMatch(/All matched files use Prettier code style!/);
   });
 });
