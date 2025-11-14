@@ -1,6 +1,6 @@
 import { exec, execSync } from 'node:child_process';
 import { promisify } from 'node:util';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -34,6 +34,8 @@ afterEach(() => {
   // hard revert this file only, never the whole repo
   safeGit(`git restore --staged --worktree -- ${BAD_FILE}`);
   safeGit(`git checkout -- ${BAD_FILE}`);
+
+  rmSync(BAD_FILE, { force: true });
 });
 
 describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
