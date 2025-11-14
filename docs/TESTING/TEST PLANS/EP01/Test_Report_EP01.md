@@ -171,3 +171,116 @@ Project adheres to EP01 setup and follows strict linting, testing, and CI/CD sta
 > node -v
 > pnpm -v
 ````
+
+## US02 — Linting & Formatting
+
+#### EP01-US02-TC01 — ESLint configured and passes cleanly
+
+**Result:** ✅ PASS
+
+**Evidence:**
+
+````bash
+PS C:\Users\adier\Documents\QAQandA> pnpm lint
+
+> qaqanda@0.1.0 lint C:\Users\adier\Documents\QAQandA
+> eslint . --ext .ts,.tsx
+
+Config verification:
+
+import nextVitals from 'eslint-config-next/core-web-vitals';
+
+
+Notes:
+ESLint configuration validated.
+Ruleset extends next/core-web-vitals.
+No syntax or linting errors detected across codebase.
+
+#### EP01-US02-TC02 — Prettier configured and enforces formatting
+
+**Result:** ✅ PASS
+
+**Evidence:**
+```bash
+PS C:\Users\adier\Documents\QAQandA> pnpm prettier --check .
+Checking formatting...
+All matched files use Prettier code style!
+
+Config verification:
+
+{
+  "semi": true,
+  "singleQuote": true,
+  "printWidth": 100,
+  "trailingComma": "all"
+}
+
+
+Notes:
+Prettier formatting verified via both manual check and pre-commit hook.
+No inconsistent formatting detected across TypeScript, CSS, or Markdown files.
+
+#### EP01-US02-TC03 — Pre-commit hook blocks lint/format violations
+
+**Result:** ✅ PASS
+
+**Negative attempt:**
+```bash
+$ git commit -m "test: provoke lint fail"
+> lint-staged running...
+src/app/layout.tsx
+  1:8  error  'React' is defined but never used  @typescript-eslint/no-unused-vars
+  2:1  error  Unexpected console statement       no-console
+
+✖ 2 problems (2 errors, 0 warnings)
+husky - pre-commit hook failed (code 1)
+
+Positive attempt after fix:
+
+$ git add -A && git commit -m "chore: fix lint"
+[main 1a2b3c4] chore: fix lint
+ 1 file changed, 2 deletions(-)
+
+ #### EP01-US02-TC04 — Lint and Format scripts exist in package.json
+
+**Result:** ✅ PASS
+
+**Evidence:**
+```json
+"scripts": {
+  "lint": "eslint . --ext .ts,.tsx",
+  "format": "prettier --write ."
+}
+
+Notes:
+Both scripts are present and functional.
+pnpm lint runs ESLint checks across TypeScript files.
+pnpm format invokes Prettier for consistent code style.
+Verified successful exit codes and no errors.
+
+
+---
+
+### 🔧 Automation Coverage — US02
+
+| Test Case | Automated | Framework | File |
+|------------|------------|------------|------|
+| **EP01-US02-TC01** – ESLint configured and passes cleanly | ✅ Yes | Vitest + Node exec | `tests/quality/lint.spec.ts` |
+| **EP01-US02-TC02** – Prettier configured and enforces formatting | ✅ Yes | Vitest + Node exec | `tests/quality/prettier.spec.ts` |
+| **EP01-US02-TC03** – Pre-commit hook blocks lint/format violations | ✅ Yes | Vitest + Git sandbox | `tests/quality/precommit-hook.spec.ts` |
+| **EP01-US02-TC04** – Lint & Format scripts exist in package.json | ✅ Yes | Vitest JSON check | `tests/quality/package-scripts.spec.ts` |
+
+**Command:**
+```bash
+pnpm qa:test
+
+Notes:
+
+These tests run static checks and hook simulations directly through Vitest—no browser runner required.
+
+Prettier spec filters unsupported file types (avoids .svg, .gitkeep, binaries, etc.) to prevent parser noise.
+
+Husky + lint-staged integration validated in precommit-hook.spec.ts.
+
+CI integration scheduled for EP08.
+````
