@@ -1,3 +1,1 @@
-export default function Ok() {
-  return null;
-}
+export default function Ok(){ return null }
