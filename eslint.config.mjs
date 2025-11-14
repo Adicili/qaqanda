@@ -32,6 +32,13 @@ export default defineConfig([
   },
 
   {
+    files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+    rules: {
+      'no-restricted-properties': 'off',
+    },
+  },
+
+  {
     files: ['lib/env.ts'],
     rules: {
       // allow process.env inside the env loader
