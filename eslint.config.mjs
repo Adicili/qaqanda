@@ -20,6 +20,22 @@ export default defineConfig([
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'process',
+          property: 'env',
+          message: 'Use ENV from lib/env instead of process.env.*',
+        },
+      ],
+      overrides: [
+        {
+          files: ['lib/env.ts'],
+          rules: {
+            'no-restricted-properties': 'off',
+          },
+        },
+      ],
     },
   },
 
