@@ -1,31 +1,61 @@
-import { promisify } from 'node:util';
-import { exec } from 'node:child_process';
+// tests/quality/env-process-usage.spec.ts
+import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
+import { join, extname } from 'node:path';
 
 import { describe, it, expect } from 'vitest';
 
-const $ = promisify(exec);
+const ROOTS = ['src', 'lib', 'app', 'schemas']; // source roots to police
+const TOP_LEVEL_FILES = ['next.config.ts']; // optionally add more if you want
+
+const ALLOWED_FILE = join('lib', 'env.ts');
+const ALLOWED_EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
+
+function walk(dir: string, acc: string[] = []) {
+  if (!existsSync(dir)) return acc;
+  for (const entry of readdirSync(dir)) {
+    const p = join(dir, entry);
+    const s = statSync(p);
+    if (s.isDirectory()) {
+      // ignore folders we don’t want to police
+      if (
+        /(^|[/\\])(tests?|__tests__|e2e|playwright|\.next|node_modules|out|build)([/\\]|$)/i.test(p)
+      ) {
+        continue;
+      }
+      walk(p, acc);
+    } else {
+      const ext = extname(p).toLowerCase();
+      if (ALLOWED_EXTS.has(ext)) acc.push(p);
+    }
+  }
+  return acc;
+}
 
 describe('US03 — Environment Variable Validation', () => {
-  it('EP01-US03-TC03: No direct process.env usage outside lib/env.ts', async () => {
-    // Grep through all tracked files for process.env
-    const { stdout } = await $(
-      `git ls-files | grep -v node_modules | xargs grep -n "process\\.env\\." || true`,
-    );
+  it('EP01-US03-TC03: No direct process.env usage outside lib/env.ts', () => {
+    const files: string[] = [];
 
-    // Filter out the allowed file
-    const offending = stdout
-      .split('\n')
-      .filter(
-        (line) =>
-          line.trim() &&
-          !line.includes('lib/env.ts') &&
-          !line.includes('tests/quality/env-process-usage.spec.ts'),
-      );
+    // add all source roots
+    for (const r of ROOTS) files.push(...walk(r));
 
-    // Assert that there are no forbidden usages
-    if (offending.length > 0) {
-      console.error('Found forbidden process.env usages:\n', offending.join('\n'));
+    // add selected top-level files if present
+    for (const f of TOP_LEVEL_FILES) if (existsSync(f)) files.push(f);
+
+    // sanity check so we don't get a false green
+    expect(files.length).toBeGreaterThan(0);
+
+    const offenders: string[] = [];
+    const needle = /process\.env\./;
+
+    for (const file of files) {
+      if (file.replace(/\\/g, '/') === ALLOWED_FILE) continue; // only env loader allowed
+      const txt = readFileSync(file, 'utf8');
+      if (needle.test(txt)) offenders.push(file);
     }
-    expect(offending.length).toBe(0);
+
+    if (offenders.length) {
+      console.error('Forbidden process.env usages (outside lib/env.ts):\n' + offenders.join('\n'));
+    }
+    expect(offenders.length).toBe(0);
   });
 });
