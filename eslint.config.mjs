@@ -28,14 +28,14 @@ export default defineConfig([
           message: 'Use ENV from lib/env instead of process.env.*',
         },
       ],
-      overrides: [
-        {
-          files: ['lib/env.ts'],
-          rules: {
-            'no-restricted-properties': 'off',
-          },
-        },
-      ],
+    },
+  },
+
+  {
+    files: ['lib/env.ts'],
+    rules: {
+      // allow process.env inside the env loader
+      'no-restricted-properties': 'off',
     },
   },
 
