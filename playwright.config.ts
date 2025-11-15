@@ -33,11 +33,10 @@ export default defineConfig({
     port: PORT,
     reuseExistingServer: true,
     timeout: 120_000,
-
+    cwd: process.cwd(),
     env: {
       NODE_ENV: 'development',
-      PORT: String(PORT),
-      BASE_URL: BASE_URL,
+      BASE_URL: `http://localhost:${PORT}`,
     },
   },
 });

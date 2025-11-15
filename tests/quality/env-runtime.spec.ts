@@ -1,6 +1,5 @@
-// tests/quality/env-runtime.spec.ts
-import { exec } from 'node:child_process';
 import { promisify } from 'node:util';
+import { exec } from 'node:child_process';
 
 import { describe, it, expect } from 'vitest';
 
@@ -8,40 +7,43 @@ const $ = promisify(exec);
 
 describe('US03 — Environment Variable Validation', () => {
   it('EP01-US03-TC02: App fails fast if required env vars are missing', async () => {
-    let error: any;
+    const port = 3200 + Math.floor(Math.random() * 500);
 
-    // Pick a non-3000 port to avoid collisions.
-    const port = 3100 + Math.floor(Math.random() * 500);
-
-    // Remove keys we’re going to override to avoid duplicate-property warnings.
+    // Build a clean env without duplicate keys (and without real creds)
     const {
       NODE_ENV: _NODE_ENV,
-      DATABRICKS_HOST: _DB_HOST,
-      DATABRICKS_TOKEN: _DB_TOKEN,
+      DATABRICKS_HOST: _DBH,
+      DATABRICKS_TOKEN: _DBT,
       OPENAI_API_KEY: _OPENAI,
       PORT: _PORT,
       BASE_URL: _BASE_URL,
       ...rest
-    } = process.env as NodeJS.ProcessEnv;
+    } = process.env;
 
+    let error: any;
     try {
-      await $('pnpm dev', {
+      // Force-load the env loader to trigger Zod immediately
+      await $(`node -e "require('./lib/env')"`, {
         env: {
-          ...rest, // everything else passes through
-          NODE_ENV: 'production', // override once (required for fail-fast)
-          DATABRICKS_HOST: '', // intentionally broken/missing
-          DATABRICKS_TOKEN: '', // intentionally broken/missing
-          OPENAI_API_KEY: '', // optional, keep empty to be safe
-          PORT: String(port), // free port so we don’t hit EADDRINUSE
-          BASE_URL: `http://localhost:${port}`, // valid URL so Zod doesn’t choke on format
+          ...rest,
+          NODE_ENV: 'production', // trigger requireds
+          DATABRICKS_HOST: '', // missing/invalid
+          DATABRICKS_TOKEN: '', // missing/invalid
+          OPENAI_API_KEY: '', // optional
+          PORT: String(port),
+          BASE_URL: `http://localhost:${port}`, // valid URL format
         },
-        timeout: 10_000,
+        timeout: 8000,
       });
-    } catch (err: any) {
-      error = err;
+    } catch (e: any) {
+      error = e;
     }
 
     expect(error).toBeDefined();
-    expect(error.stderr || error.stdout || '').toMatch(/invalid|missing|ZodError/i);
+    // Match our explicit error text from lib/env.ts OR Zod wording
+    const output = String(error.stderr || error.stdout || '');
+    expect(output).toMatch(
+      /Invalid environment variables|Missing required environment variables|ZodError/i,
+    );
   });
 });
