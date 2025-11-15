@@ -42,3 +42,7 @@ next-env.d.ts
 
 # test files
 src/app/__qa_bad__.tsx
+
+# playwright
+playwright-report/
+test-results/
