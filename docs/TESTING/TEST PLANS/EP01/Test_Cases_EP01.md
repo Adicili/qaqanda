@@ -198,18 +198,6 @@
 
 ### EP01-US04-TC01
 
-- **Title:** Playwright browsers installed successfully
-- **Type:** Setup
-- **Priority:** P0
-- **Automate:** Yes
-- **Steps:**
-  1. Run `npx playwright install --with-deps`.
-  2. Verify installation completes without error.
-
----
-
-### EP01-US04-TC02
-
 - **Title:** `playwright.config.ts` exists and loads correctly
 - **Type:** Config
 - **Priority:** P0
@@ -220,7 +208,7 @@
 
 ---
 
-### EP01-US04-TC03
+### EP01-US04-TC02
 
 - **Title:** Folder structure for tests exists (`/tests/ui`, `/tests/api`, `/tests/pages`)
 - **Type:** Config
@@ -232,7 +220,7 @@
 
 ---
 
-### EP01-US04-TC04
+### EP01-US04-TC03
 
 - **Title:** Smoke spec runs and passes with HTML report generated
 - **Type:** UI Smoke
@@ -252,7 +240,7 @@
 | US01 | 7          | 4         | Project + UI setup |
 | US02 | 4          | 4         | Lint + Hooks       |
 | US03 | 3          | 3         | Env validation     |
-| US04 | 4          | 4         | Playwright setup   |
+| US04 | 3          | 3         | Playwright setup   |
 
 **Total:** 18 test cases  
 **Automation coverage:** 83%  

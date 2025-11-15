@@ -330,3 +330,97 @@ Notes:
 Static analysis confirms that no source files outside lib/env.ts reference process.env.
 All environment variable access is centralized and validated through the Zod-based ENV object, guaranteeing runtime safety and consistent configuration boundaries across the app.
 ````
+
+#### EP01-US04-TC01 — playwright.config.ts exists and loads correctly
+
+Result: ✅ PASS
+
+Evidence:
+
+PS C:\Users\adier\Documents\qaqanda> npx playwright test --list
+Listing tests:
+[chromium] › smoke.spec.ts:6:7 › Smoke: home page › loads / and has expected title
+Total: 1 test in 1 file
+PS C:\Users\adier\Documents\qaqanda>
+
+File existence check:
+
+PS C:\Users\adier\Documents\qaqanda> dir playwright.config.ts
+
+> >
+
+    Directory: C:\Users\adier\Documents\qaqanda
+
+Mode LastWriteTime Length Name
+
+---
+
+-a---- 11/15/2025 10:09 PM 934 playwright.config.ts
+
+#### EP01-US04-TC02 — Folder structure for tests exists (/tests/ui, /tests/api, /tests/pages)
+
+Result: ✅ PASS
+
+Evidence:
+
+PS C:\Users\adier\Documents\qaqanda> dir tests
+
+    Directory: C:\Users\adier\Documents\qaqanda\tests
+
+Mode LastWriteTime Length Name
+
+---
+
+d----- 11/11/2025 10:43 PM api
+d----- 11/14/2025 2:43 PM pages
+d----- 11/15/2025 10:09 PM quality
+d----- 11/15/2025 10:09 PM ui
+-a---- 11/11/2025 10:43 PM 0 .gitkeep
+
+Git tracking confirmation:
+
+PS C:\Users\adier\Documents\qaqanda> git ls-files tests/
+tests/.gitkeep
+tests/api/.gitkeep
+tests/pages/.gitkeep
+tests/pages/BasePage.ts
+tests/quality/env-process-usage.spec.ts
+tests/quality/env-runtime.spec.ts
+tests/quality/env.spec.ts
+tests/quality/lint.spec.ts
+tests/quality/package-scripts.spec.ts
+tests/quality/precommit-hook.spec.ts
+tests/quality/prettier.spec.ts
+tests/ui/.gitkeep
+tests/ui/smoke.spec.ts
+PS C:\Users\adier\Documents\qaqanda>
+
+All required directories exist and are committed.
+
+#### EP01-US04-TC03 — Smoke spec runs and passes with HTML report generated
+
+Result: ✅ PASS
+(Since you confirmed the smoke test is now green.)
+
+Evidence:
+
+PS C:\Users\adier\Documents\qaqanda> pnpm test
+
+> qaqanda@0.1.0 test C:\Users\adier\Documents\qaqanda
+> playwright test
+
+Running 1 test using 1 worker
+
+✓ 1 …ec.ts:6:7 › Smoke: home page › loads / and has expected title (3.3s)
+1 passed (5.6s)
+
+To open last HTML report run:
+
+pnpm exec playwright show-report
+
+PS C:\Users\adier\Documents\qaqanda>
+
+HTML report created:
+
+playwright-report/
+└── index.html
