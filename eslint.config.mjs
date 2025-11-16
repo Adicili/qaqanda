@@ -39,7 +39,7 @@ export default defineConfig([
   },
 
   {
-    files: ['lib/env.ts'],
+    files: ['src/lib/env.ts'],
     rules: {
       // allow process.env inside the env loader
       'no-restricted-properties': 'off',

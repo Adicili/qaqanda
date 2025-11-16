@@ -47,7 +47,7 @@ describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
       'utf8',
     );
 
-    await $(`git add "${BAD_FILE}"`);
+    await $(`git add -f "${BAD_FILE}"`);
     let failed = false;
     try {
       await $(`git commit -m "test: provoke lint fail"`, { env: { ...process.env, HUSKY: '1' } });
@@ -62,7 +62,7 @@ describe('US02-TC03: Pre-commit hook blocks lint/format violations', () => {
 
   it('after fixing issues, commit MUST succeed', async () => {
     writeFileSync(BAD_FILE, `export default function Ok(){ return null }\n`, 'utf8');
-    await $(`git add "${BAD_FILE}"`);
+    await $(`git add -f "${BAD_FILE}"`);
     const { stdout } = await $(`git commit -m "chore: fix lint"`, {
       env: { ...process.env, HUSKY: '1' },
     });
