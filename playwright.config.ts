@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 
-import { ENV } from './lib/env';
+import { ENV } from '@/lib/env';
 
 const PORT = ENV.PORT ?? 3000;
 const BASE_URL = ENV.BASE_URL ?? `http://localhost:${PORT}`;
