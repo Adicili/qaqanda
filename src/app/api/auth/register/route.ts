@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { z } from 'zod';
 
 import { registerSchema } from '@/schemas/auth';
 import { dbUsers } from '@/lib/db.users';
@@ -11,11 +10,21 @@ export async function POST(request: NextRequest) {
     const result = registerSchema.safeParse(body);
 
     if (!result.success) {
-      const errorTree = z.treeifyError(result.error);
+      const fieldErrors: Record<string, string[]> = {};
+
+      for (const issue of result.error.issues) {
+        const path = issue.path.join('.') || '_root';
+
+        if (!fieldErrors[path]) {
+          fieldErrors[path] = [];
+        }
+
+        fieldErrors[path].push(issue.message);
+      }
+
       return NextResponse.json(
         {
-          error: 'Invalid request body',
-          details: errorTree,
+          errors: fieldErrors,
         },
         { status: 400 },
       );
@@ -27,7 +36,9 @@ export async function POST(request: NextRequest) {
     if (existingUser) {
       return NextResponse.json(
         {
-          error: 'Email already in use',
+          errors: {
+            email: ['Email already in use'],
+          },
         },
         { status: 409 },
       );
