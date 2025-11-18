@@ -3,7 +3,7 @@
  * US01 — Project Setup & Bootstrap
  *
  * Covers:
- *  - EP01-US01-TC03 — Next.js app boots successfully on http://localhost:PORT
+ *  - EP01-US01-TC03 — Next.js app boots successfully on http://localhost:3000
  */
 
 import { spawn, ChildProcess } from 'node:child_process';
@@ -27,15 +27,25 @@ function buildCleanEnv(overrides: Record<string, string>): NodeJS.ProcessEnv {
   return { ...base, ...overrides };
 }
 
-async function waitForHttpOk(url: string, timeoutMs = 40_000, intervalMs = 750) {
+async function waitForHttpOk(
+  url: string,
+  proc: ChildProcess,
+  timeoutMs = 40_000,
+  intervalMs = 750,
+) {
   const start = Date.now();
 
   while (Date.now() - start < timeoutMs) {
+    // ako je proces crkao u međuvremenu — nema smisla čekati dalje
+    if (proc.exitCode !== null) {
+      throw new Error(`Dev server exited early with code ${proc.exitCode}`);
+    }
+
     try {
       const res = await fetch(url);
       if (res.ok) return res;
     } catch {
-      // server još nije spreman, ignorišemo
+      // server još nije spreman
     }
     await delay(intervalMs);
   }
@@ -43,26 +53,25 @@ async function waitForHttpOk(url: string, timeoutMs = 40_000, intervalMs = 750) 
   throw new Error(`Server at ${url} did not respond with 2xx within ${timeoutMs}ms`);
 }
 
-function startDevServer(port: number): { proc: ChildProcess; url: string } {
-  const url = `http://localhost:${port}`;
+function startDevServer(): { proc: ChildProcess; url: string } {
+  const url = 'http://localhost:3000';
 
   const env = buildCleanEnv({
     NODE_ENV: 'development',
-    PORT: String(port),
+    // Next ionako default-uje na 3000, ovo je samo eksplicitno
+    PORT: '3000',
     BASE_URL: url,
   });
 
-  // Windows: koristi cmd.exe (COMSPEC)
   if (process.platform === 'win32') {
     const shell = process.env.COMSPEC || 'cmd.exe';
-    const proc = spawn(shell, ['/d', '/s', '/c', `pnpm dev`], {
+    const proc = spawn(shell, ['/d', '/s', '/c', 'pnpm dev'], {
       env,
       stdio: 'pipe',
     });
     return { proc, url };
   }
 
-  // *nix: koristi bash ako postoji, ili direktan pnpm
   const proc = spawn('bash', ['-lc', 'pnpm dev'], {
     env,
     stdio: 'pipe',
@@ -74,20 +83,17 @@ function startDevServer(port: number): { proc: ChildProcess; url: string } {
 us('US01', 'Project Setup & Bootstrap', () => {
   tc(
     'EP01-US01-TC03',
-    'Next.js app boots successfully on http://localhost:PORT',
+    'Next.js app boots successfully on http://localhost:3000',
     async () => {
-      const port = 3000 + Math.floor(Math.random() * 500);
-
-      const { proc, url } = startDevServer(port);
+      const { proc, url } = startDevServer();
 
       let error: unknown | null = null;
 
       try {
-        const res = await waitForHttpOk(url);
+        const res = await waitForHttpOk(url, proc);
         expect(res.status).toBe(200);
 
         const html = await res.text();
-        // Minimalna sanity provera — da je zaista HTML
         expect(html).toMatch(/<html/i);
       } catch (e) {
         error = e;
@@ -97,6 +103,6 @@ us('US01', 'Project Setup & Bootstrap', () => {
 
       if (error) throw error;
     },
-    60_000, // timeout za ovaj TC
+    60_000,
   );
 });
