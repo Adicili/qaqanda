@@ -6,7 +6,7 @@ const PORT = ENV.PORT ?? 3000;
 const BASE_URL = ENV.BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
-  testDir: 'tests/ui',
+  testDir: 'tests',
   timeout: 30_000,
   fullyParallel: true,
   retries: ENV.CI ? 2 : 0,
@@ -23,8 +23,20 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'ui',
+      testDir: 'tests/ui',
+      use: {
+        browserName: 'chromium',
+        ...devices['Desktop Chrome'],
+        baseURL: ENV.BASE_URL ?? 'http://localhost:3000',
+      },
+    },
+    {
+      name: 'api',
+      testDir: 'tests/api',
+      use: {
+        baseURL: ENV.BASE_URL ?? 'http://localhost:3000',
+      },
     },
   ],
 
