@@ -6,7 +6,7 @@
 
 ### EP01-US01-TC01
 
-- **Title:** Git repository initialized and first commit exists
+- **Test name:** Git repository initialized and first commit exists
 - **Type:** Process / Repo
 - **Priority:** P0
 - **Automate:** No
@@ -21,7 +21,7 @@
 
 ### EP01-US01-TC02
 
-- **Title:** `.gitignore` contains Node/Next/Playwright/env patterns
+- **Test name:** `.gitignore` contains Node/Next/Playwright/env patterns
 - **Type:** Config
 - **Priority:** P1
 - **Automate:** No
@@ -34,7 +34,7 @@
 
 ### EP01-US01-TC03
 
-- **Title:** Next.js app boots successfully on http://localhost:3000
+- **Test name:** Next.js app boots successfully on http://localhost:3000
 - **Type:** Build / Run
 - **Priority:** P0
 - **Automate:** Yes
@@ -48,7 +48,7 @@
 
 ### EP01-US01-TC04
 
-- **Title:** TypeScript enabled and builds cleanly
+- **Test name:** TypeScript enabled and builds cleanly
 - **Type:** Static Analysis
 - **Priority:** P0
 - **Automate:** Yes
@@ -60,7 +60,7 @@
 
 ### EP01-US01-TC05
 
-- **Title:** Tailwind compiles and styles apply correctly
+- **Test name:** Tailwind compiles and styles apply correctly
 - **Type:** UI Smoke
 - **Priority:** P0
 - **Automate:** Yes
@@ -73,7 +73,7 @@
 
 ### EP01-US01-TC06
 
-- **Title:** Base folder structure exists as expected
+- **Test name:** Base folder structure exists as expected
 - **Type:** Config
 - **Priority:** P1
 - **Automate:** No
@@ -92,7 +92,7 @@
 
 ### EP01-US01-TC07
 
-- **Title:** README contains setup, run instructions, and tool versions
+- **Test name:** README contains setup, run instructions, and tool versions
 - **Type:** Documentation
 - **Priority:** P2
 - **Automate:** No
@@ -106,10 +106,20 @@
 
 ### EP01-US02-TC01
 
-- **Title:** ESLint configured and passes cleanly
+- **Test name:** ESLint configured and passes cleanly
 - **Type:** Static Analysis
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/lint.spec.ts`
+  - Test helper: `tc()` from `tests/support/tags.ts`
+  - Test name: `EP01-US02-TC01 — ESLint configured and passes cleanly`
+  - Command: `pnpm qa:test -- -t "EP01-US02-TC01"`
+- **Description:**
+  Verify that ESLint is correctly configured and passes on all real TypeScript/TSX files
+  in the project. The test discovers tracked `.ts`/`.tsx` files (via `git ls-files` or
+  filesystem crawl) and runs `pnpm eslint` against them, expecting exit code 0.
 - **Steps:**
   1. Run `pnpm lint`.
   2. Verify 0 errors; ensure config includes `"next/core-web-vitals"`.
@@ -118,10 +128,21 @@
 
 ### EP01-US02-TC02
 
-- **Title:** Prettier configured and enforces formatting
+- **Test name:** Prettier configured and enforces formatting
 - **Type:** Static Analysis
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/prettier.spec.ts`
+  - Test helper: `tc()` from `tests/support/tags.ts`
+  - Test name: `EP01-US02-TC02 — Prettier configured and enforces formatting`
+  - Command: `pnpm qa:test -- -t "EP01-US02-TC02"`
+- **Description:**
+  Verify that Prettier is configured and that all tracked source and config files
+  (TS/TSX/JS/JSON/MD/CSS/YAML/HTML/SVG...) pass `prettier --check` without formatting errors.
+  The test discovers files via `git ls-files` or filesystem crawl and runs
+  `pnpm prettier --check` against them.
 - **Steps:**
   1. Run `prettier --check .`
   2. Ensure “All matched files use Prettier code style!” output.
@@ -131,10 +152,19 @@
 
 ### EP01-US02-TC03
 
-- **Title:** Pre-commit hook blocks lint/format violations
+- **Test name:** Pre-commit hook blocks lint/format violations
 - **Type:** Process / Hook
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/precommit-hook.spec.ts`
+  - Test helper: `tc()` from `tests/support/tags.ts`
+  - Command: `pnpm qa:test -- -t "EP01-US02-TC03"`
+- **Description:**
+  Validate that Husky and lint-staged correctly prevent commits when linting or formatting
+  violations are present. The test creates a temporary TSX file with intentional ESLint errors,
+  attempts to commit it (expecting failure), then fixes the file and verifies that the commit succeeds.
 - **Steps:**
   1. Introduce a linting error (e.g., unused import).
   2. Stage file and try to commit.
@@ -145,10 +175,21 @@
 
 ### EP01-US02-TC04
 
-- **Title:** Lint and Format scripts exist in `package.json`
+- **Test name:** Lint and Format scripts exist in `package.json`
 - **Type:** Config
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/package-scripts.spec.ts`
+  - Test helper: `tc()` from `tests/support/tags.ts`
+  - Test name: `EP01-US02-TC04 — Lint and Format scripts exist`
+  - Command: `pnpm qa:test -- -t "EP01-US02-TC04"`
+- **Description:**
+  Validate that the project includes the required npm scripts:
+  - `"lint": "eslint . --ext .ts,.tsx"`
+  - `"format": "prettier --write ."`
+    These scripts must exist in `package.json` to support project-wide linting and formatting.
 - **Steps:**
   1. Open `package.json`.
   2. Verify `"lint": "eslint . --ext .ts,.tsx"` and `"format": "prettier --write ."` scripts exist.
@@ -159,10 +200,20 @@
 
 ### EP01-US03-TC01
 
-- **Title:** `.env.local.example` exists and includes placeholders
+- **Test name:** `.env.local.example` exists and includes placeholders
 - **Type:** Config
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/env.spec.ts`
+  - Test helper: `tc()` from `tests/support/tags.ts`
+  - Test name: `EP01-US03-TC01 — .env.local.example exists and includes placeholders`
+  - Command: `pnpm qa:test -- -t "EP01-US03-TC01"`
+- **Description:**
+  Verify that `.env.local.example` exists in the project root and contains placeholder definitions
+  for all required environment variables: `DATABRICKS_HOST`, `DATABRICKS_TOKEN`, `OPENAI_API_KEY`.
+
 - **Steps:**
   1. Verify `.env.local.example` file exists.
   2. Ensure it includes DATABRICKS_HOST, DATABRICKS_TOKEN, and OPENAI_API_KEY placeholders.
@@ -171,10 +222,18 @@
 
 ### EP01-US03-TC02
 
-- **Title:** App fails fast if required env vars are missing
+- **Test name:** App fails fast if required env vars are missing
 - **Type:** Runtime / Guard
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/env-runtime.spec.ts`
+  - Test helper: `tc()` from `tests/support/tags.ts`
+  - Test name: `EP01-US03-TC02 — App fails fast if required env vars are missing`
+  - Command: `pnpm qa:test -- -t EP01-US03-TC02`
+- **Description:**
+  Application must fail fast on startup if required environment variables are missing when `NODE_ENV=production`. The process should exit with an error related to invalid/missing env configuration (Zod validation or dev server lock error).
 - **Steps:**
   1. Temporarily remove `.env.local`.
   2. Run `pnpm dev`.
@@ -184,10 +243,17 @@
 
 ### EP01-US03-TC03
 
-- **Title:** No direct `process.env` usage outside `lib/env.ts`
+- **Test name:** `EP01-US03-TC03 - No direct process.env usage outside lib/env.ts`
 - **Type:** Static Analysis
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Vitest
+  - Spec file: `tests/quality/env-process-usage.spec.ts`
+  - Test name: `EP01-US03-TC03 — No direct process.env usage outside lib/env.ts`
+  - Command: `pnpm qa:test -- --t EP01-US03-TC03`
+- **Description:**
+  Ensure that no file outside `lib/env.ts` directly accesses `process.env.*`.
 - **Steps:**
   1. Run code search for `process.env.`.
   2. Verify all occurrences are inside `lib/env.ts` only.
@@ -198,7 +264,7 @@
 
 ### EP01-US04-TC01
 
-- **Title:** `playwright.config.ts` exists and loads correctly
+- **Test name:** `playwright.config.ts` exists and loads correctly
 - **Type:** Config
 - **Priority:** P0
 - **Automate:** Yes
@@ -210,7 +276,7 @@
 
 ### EP01-US04-TC02
 
-- **Title:** Folder structure for tests exists (`/tests/ui`, `/tests/api`, `/tests/pages`)
+- **Test name:** Folder structure for tests exists (`/tests/ui`, `/tests/api`, `/tests/pages`)
 - **Type:** Config
 - **Priority:** P1
 - **Automate:** Yes
@@ -222,7 +288,7 @@
 
 ### EP01-US04-TC03
 
-- **Title:** Smoke spec runs and passes with HTML report generated
+- **Test name:** Smoke spec runs and passes with HTML report generated
 - **Type:** UI Smoke
 - **Priority:** P0
 - **Automate:** Yes

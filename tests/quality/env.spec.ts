@@ -1,11 +1,20 @@
-// tests/quality/env.spec.ts
+/**
+ * EP01 — Project Foundation & Tooling
+ * US03 — Environment Variable Validation
+ *
+ * Covers:
+ *  - EP01-US03-TC01 — `.env.local.example` exists and includes placeholders
+ */
+
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
 
-describe('US03 — Environment Variable Validation', () => {
-  it('EP01-US03-TC01: `.env.local.example` exists and includes placeholders', () => {
+import { us, tc } from '../support/tags';
+
+us('US03', 'Environment Variable Validation', () => {
+  tc('EP01-US03-TC01', '.env.local.example exists and includes placeholders', () => {
     const p = resolve(process.cwd(), '.env.local.example');
     expect(existsSync(p)).toBe(true);
 

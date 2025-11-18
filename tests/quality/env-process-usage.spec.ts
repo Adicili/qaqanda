@@ -1,8 +1,17 @@
-// tests/quality/env-process-usage.spec.ts
+/**
+ * EP01 — Project Foundation & Tooling
+ * US03 — Environment Variable Validation
+ *
+ * Covers:
+ *  - EP01-US03-TC03 — No direct `process.env` usage outside lib/env.ts
+ */
+
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
+
+import { us, tc } from '../support/tags';
 
 const ROOTS = ['src', 'lib', 'app', 'schemas']; // source roots to police
 const TOP_LEVEL_FILES = ['next.config.ts']; // optionally add more if you want
@@ -31,8 +40,8 @@ function walk(dir: string, acc: string[] = []) {
   return acc;
 }
 
-describe('US03 — Environment Variable Validation', () => {
-  it('EP01-US03-TC03: No direct process.env usage outside lib/env.ts', () => {
+us('US03', 'Environment Variable Validation', () => {
+  tc('EP01-US03-TC03', 'No direct process.env usage outside lib/env.ts', () => {
     const files: string[] = [];
 
     // add all source roots

@@ -1,9 +1,19 @@
+/**
+ * EP01 — Project Foundation & Tooling
+ * US02 — Linting & Formatting
+ *
+ * Covers:
+ *  - EP01-US02-TC02 — Prettier configured and enforces formatting
+ */
+
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
+
+import { us, tc } from '../support/tags';
 
 const execFileP = promisify(execFile);
 
@@ -92,8 +102,8 @@ async function run(cmd: string) {
   }
 }
 
-describe('US02-TC02: Prettier configured and enforces formatting', () => {
-  it('prettier --check on tracked files is clean', async () => {
+us('US02', 'Linting & Formatting', () => {
+  tc('EP01-US02-TC02', 'Prettier configured and enforces formatting', async () => {
     const files = await trackedFilesOrFallback();
     expect(files.length).toBeGreaterThan(0);
 

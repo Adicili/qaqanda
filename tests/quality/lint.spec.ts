@@ -1,9 +1,19 @@
+/**
+ * EP01 — Project Foundation & Tooling
+ * US02 — Linting & Formatting
+ *
+ * Covers:
+ *  - EP01-US02-TC01 — ESLint configured and passes cleanly
+ */
+
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
+
+import { us, tc } from '../support/tags';
 
 const execFileP = promisify(execFile);
 
@@ -71,8 +81,8 @@ async function run(cmd: string) {
   }
 }
 
-describe('US02-TC01: ESLint configured and passes cleanly', () => {
-  it('eslint exits with code 0 on real TS/TSX files', async () => {
+us('US02', 'Linting & Formatting', () => {
+  tc('EP01-US02-TC01', 'ESLint configured and passes cleanly', async () => {
     const files = await collectTsFiles();
     expect(files.length).toBeGreaterThan(0);
 
