@@ -5,8 +5,6 @@ import { ENV } from '@/lib/env';
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
 
 test.describe('EP02-US01 - User Registration API', () => {
-  test.describe.configure({ mode: 'serial' });
-
   test('TC-EP02-US01-01 — register with valid data returns 200', async ({ request }) => {
     const uniqueEmail = `newuser+${Date.now()}@example.com`;
 
@@ -50,7 +48,9 @@ test.describe('EP02-US01 - User Registration API', () => {
 
     const json = await second.json();
 
-    expect(json.error).toBe('Email already in use');
+    expect(json.errors).toBeDefined();
+    expect(json.errors.email).toBeDefined();
+    expect(json.errors.email[0]).toBe('Email already in use');
   });
 
   test('TC-EP02-US01-03 — invalid email format returns 400', async ({ request }) => {
@@ -65,6 +65,90 @@ test.describe('EP02-US01 - User Registration API', () => {
 
     const json = await response.json();
 
-    expect(json.error).toBe('Invalid request body');
+    expect(json.errors).toBeDefined();
+    expect(json.errors.email).toBeDefined();
+    expect(json.errors.email[0]).toBe('Invalid email format');
+  });
+
+  test('TC-EP02-US01-04 — password must contain special char returns 400', async ({ request }) => {
+    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+      data: {
+        email: `weakpass+${Date.now()}@example.com`,
+        password: 'weakpass1',
+        confirmPassword: 'weakpass1',
+      },
+    });
+
+    expect(response.status()).toBe(400);
+
+    const json = await response.json();
+
+    expect(json.errors).toBeDefined();
+    expect(json.errors.password).toBeDefined();
+    expect(json.errors.password[0]).toBe('Password must contain at least one special character');
+  });
+
+  test('TC-EP02-US01-05 — password must contain a number returns 400', async ({ request }) => {
+    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+      data: {
+        email: `weakpass+${Date.now()}@example.com`,
+        password: 'weakpass!',
+        confirmPassword: 'weakpass!',
+      },
+    });
+
+    expect(response.status()).toBe(400);
+
+    const json = await response.json();
+
+    expect(json.errors).toBeDefined();
+    expect(json.errors.password).toBeDefined();
+    expect(json.errors.password[0]).toBe('Password must contain at least one number');
+  });
+
+  test('TC-EP02-US01-06 — password must be at least 8 chars long returns 400', async ({
+    request,
+  }) => {
+    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+      data: {
+        email: `weakpass+${Date.now()}@example.com`,
+        password: 'weak!1',
+        confirmPassword: 'weak!1',
+      },
+    });
+
+    expect(response.status()).toBe(400);
+
+    const json = await response.json();
+
+    expect(json.errors).toBeDefined();
+    expect(json.errors.password).toBeDefined();
+    expect(json.errors.password[0]).toBe('Password must be at least 8 characters');
+  });
+
+  test('TC-EP02-US01-07 — password mismatch returns 400', async ({ request }) => {
+    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+      data: {
+        email: `mismatch+${Date.now()}@example.com`,
+        password: 'Passw0rd!',
+        confirmPassword: 'Passw0rd!1',
+      },
+    });
+
+    expect(response.status()).toBe(400);
+
+    const json = await response.json();
+
+    expect(json.errors).toBeDefined();
+    expect(json.errors.confirmPassword).toBeDefined();
+    expect(json.errors.confirmPassword[0]).toBe('Passwords do not match');
+  });
+
+  test('TC-EP02-US01-08 — empty body returns 400', async ({ request }) => {
+    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+      data: {},
+    });
+
+    expect(response.status()).toBe(400);
   });
 });

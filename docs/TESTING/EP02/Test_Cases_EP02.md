@@ -101,7 +101,7 @@ For each test case:
 
 ### EP02-US01-TC04
 
-- **Title:** Weak password rejected
+- **Title:** Password must contain special char
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
@@ -112,19 +112,69 @@ For each test case:
    ```json
    {
      "email": "weakpass@example.com",
-     "password": "weakpass",
-     "confirmPassword": "weakpass"
+     "password": "weakpass1",
+     "confirmPassword": "weakpass1"
    }
    ```
 
 **Expected Result:**
 
 - Response status `400 Bad Request`.
-- Error describes password policy violation (length/number/special char).
+- Error describes password policy violation (special char).
 
 ---
 
 ### EP02-US01-TC05
+
+- **Title:** Password must contain number
+- **Type:** API
+- **Priority:** P1
+- **Automate:** Yes
+
+**Steps:**
+
+1. Send POST `/api/auth/register` with:
+   ```json
+   {
+     "email": "weakpass@example.com",
+     "password": "weakpass!",
+     "confirmPassword": "weakpass!"
+   }
+   ```
+
+**Expected Result:**
+
+- Response status `400 Bad Request`.
+- Error describes password policy violation (number).
+
+---
+
+### EP02-US01-TC06
+
+- **Title:** Password must contain be at least 8 chars
+- **Type:** API
+- **Priority:** P1
+- **Automate:** Yes
+
+**Steps:**
+
+1. Send POST `/api/auth/register` with:
+   ```json
+   {
+     "email": "weakpass@example.com",
+     "password": "weak!1",
+     "confirmPassword": "weak!1"
+   }
+   ```
+
+**Expected Result:**
+
+- Response status `400 Bad Request`.
+- Error describes password policy violation (length).
+
+---
+
+### EP02-US01-TC07
 
 - **Title:** Password mismatch rejected
 - **Type:** API
@@ -149,7 +199,7 @@ For each test case:
 
 ---
 
-### EP02-US01-TC06
+### EP02-US01-TC08
 
 - **Title:** Missing or empty request body
 - **Type:** API
