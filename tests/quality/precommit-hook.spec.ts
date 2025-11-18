@@ -11,7 +11,7 @@ import { promisify } from 'node:util';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
-import { it, expect, beforeEach, afterEach } from 'vitest';
+import { expect, beforeEach, afterEach } from 'vitest';
 
 import { us, tc } from '../support/tags';
 
@@ -49,8 +49,10 @@ afterEach(() => {
 });
 
 us('US02', 'Linting & Formatting', () => {
-  tc('EP01-US02-TC03', 'Pre-commit hook blocks lint/format violations', () => {
-    it('commit with violations MUST fail due to husky/lint-staged', async () => {
+  tc(
+    'EP01-US02-TC03',
+    '[neg] commit with violations MUST fail due to husky/lint-staged',
+    async () => {
       // Unused import + forbidden console.log to trip your rules
       writeFileSync(
         BAD_FILE,
@@ -69,15 +71,15 @@ us('US02', 'Linting & Formatting', () => {
         expect(out).toMatch(/ESLint|no-console|no-unused-vars/i);
       }
       expect(failed).toBe(true);
-    });
+    },
+  );
 
-    it('after fixing issues, commit MUST succeed', async () => {
-      writeFileSync(BAD_FILE, `export default function Ok(){ return '${Date.now()}' }\n`, 'utf8');
-      await $(`git add -f "${BAD_FILE}"`);
-      const { stdout } = await $(`git commit -m "chore: fix lint"`, {
-        env: { ...process.env, HUSKY: '1' },
-      });
-      expect(stdout).toMatch(/chore: fix lint/);
+  tc('EP01-US02-TC03', '[pos] after fixing issues, commit MUST succeed', async () => {
+    writeFileSync(BAD_FILE, `export default function Ok(){ return '${Date.now()}' }\n`, 'utf8');
+    await $(`git add -f "${BAD_FILE}"`);
+    const { stdout } = await $(`git commit -m "chore: fix lint"`, {
+      env: { ...process.env, HUSKY: '1' },
     });
+    expect(stdout).toMatch(/chore: fix lint/);
   });
 });
