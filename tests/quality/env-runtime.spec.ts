@@ -1,11 +1,3 @@
-/**
- * EP01 — Project Foundation & Tooling
- * US03 — Environment Variable Validation
- *
- * Covers:
- *  - EP01-US03-TC02 — App fails fast if required env vars are missing
- */
-
 import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
 
@@ -16,6 +8,15 @@ import { us, tc } from '../support/tags';
 const $ = promisify(exec);
 
 us('US03', 'Environment Variable Validation', () => {
+  /**
+   * @testcase EP01-US03-TC02
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Runtime validation of environment variables
+   * - App must fail fast on missing mandatory env vars
+   * - Ensures no undefined config reaches production runtime
+   */
   tc('EP01-US03-TC02', 'App fails fast if required env vars are missing', async () => {
     const port = 3200 + Math.floor(Math.random() * 500);
 

@@ -1,11 +1,3 @@
-/**
- * EP01 — Project Foundation & Tooling
- * US02 — Linting & Formatting
- *
- * Covers:
- *  - EP01-US02-TC03 — Pre-commit hook blocks lint/format violations
- */
-
 import { exec, execSync } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -49,6 +41,15 @@ afterEach(() => {
 });
 
 us('US02', 'Linting & Formatting', () => {
+  /**
+   * @testcase EP01-US02-TC03
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Husky pre-commit hook behavior
+   * - lint-staged rejection of improperly formatted code
+   * - Prevents broken/dirty changes from entering git history
+   */
   tc(
     'EP01-US02-TC03',
     '[neg] commit with violations MUST fail due to husky/lint-staged',

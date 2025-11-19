@@ -1,11 +1,3 @@
-/**
- * EP01 — Project Foundation & Tooling
- * US02 — Linting & Formatting
- *
- * Covers:
- *  - EP01-US02-TC01 — ESLint configured and passes cleanly
- */
-
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
@@ -82,6 +74,15 @@ async function run(cmd: string) {
 }
 
 us('US02', 'Linting & Formatting', () => {
+  /**
+   * @testcase EP01-US02-TC01
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - ESLint configuration validity
+   * - Successful lint run across all TS/TSX files
+   * - Prevents committing syntactically invalid or stylistically broken code
+   */
   tc('EP01-US02-TC01', 'ESLint configured and passes cleanly', async () => {
     const files = await collectTsFiles();
     expect(files.length).toBeGreaterThan(0);

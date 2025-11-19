@@ -1,11 +1,3 @@
-/**
- * EP01 — Project Foundation & Tooling
- * US02 — Linting & Formatting
- *
- * Covers:
- *  - EP01-US02-TC02 — Prettier configured and enforces formatting
- */
-
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
@@ -103,6 +95,15 @@ async function run(cmd: string) {
 }
 
 us('US02', 'Linting & Formatting', () => {
+  /**
+   * @testcase EP01-US02-TC02
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Prettier configuration correctness
+   * - Enforced formatting across committed files
+   * - Prevents inconsistent code styling
+   */
   tc('EP01-US02-TC02', 'Prettier configured and enforces formatting', async () => {
     const files = await trackedFilesOrFallback();
     expect(files.length).toBeGreaterThan(0);

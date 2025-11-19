@@ -1,11 +1,3 @@
-/**
- * EP01 — Project Foundation & Tooling
- * US01 — Project Setup & Bootstrap
- *
- * Covers:
- *  - EP01-US01-TC03 — Next.js app boots successfully on http://localhost:3000
- */
-
 import { spawn, ChildProcess } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -81,6 +73,15 @@ function startDevServer(): { proc: ChildProcess; url: string } {
 }
 
 us('US01', 'Project Setup & Bootstrap', () => {
+  /**
+   * @testcase EP01-US01-TC03
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Project boots successfully via `pnpm dev`
+   * - Next.js dev server responds on BASE_URL
+   * - Detects breaking changes preventing app startup
+   */
   tc(
     'EP01-US01-TC03',
     'Next.js app boots successfully on http://localhost:3000',

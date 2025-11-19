@@ -18,6 +18,17 @@ For each test case:
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test helper: `us()` + `tc()` from `tests/support/tags.ts`
+  - Test name: `EP02-US01-TC01 — Register with valid data returns 200`
+  - Command:  
+     `sh
+pnpm qa:api -- -g "EP02-US01-TC01"
+`
+    **Description:**  
+    Validates the happy-path registration flow, creation of a new user with role `ENGINEER`, and sanitized API response.
 
 **Preconditions:**
 
@@ -52,6 +63,18 @@ For each test case:
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Helper: `us()` + `tc()`
+  - Test name: `EP02-US01-TC02 — register with existing email returns 409`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC02"
+    ```
+
+**Description:**  
+Ensures that registration fails when an email is already in use.
 
 **Preconditions:**
 
@@ -83,6 +106,17 @@ For each test case:
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC03 — invalid email format returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC03"
+    ```
+
+**Description:**  
+Validates backend email format rules.
 
 **Steps:**
 
@@ -109,6 +143,17 @@ For each test case:
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC04 — password must contain special char returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC04"
+    ```
+
+**Description:**  
+Ensures password policy for special characters is enforced.
 
 **Steps:**
 
@@ -135,6 +180,16 @@ For each test case:
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC05 — password must contain a number returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC05"
+    ```
+
+**Description:**  
+Ensures passwords missing digits fail validation.
 
 **Steps:**
 
@@ -161,6 +216,16 @@ For each test case:
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC06 — password must be at least 8 chars long returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC06"
+    ```
+
+**Description:**  
+Ensures backend enforces minimum password length.
 
 **Steps:**
 
@@ -187,6 +252,16 @@ For each test case:
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC07 — password mismatch returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC07"
+    ```
+
+**Description:**  
+Ensures that password confirmation is validated properly.
 
 **Steps:**
 
@@ -213,6 +288,16 @@ For each test case:
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC08 — empty body returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC08"
+    ```
+
+**Description:**  
+Ensures backend rejects empty or missing payloads.
 
 **Steps:**
 

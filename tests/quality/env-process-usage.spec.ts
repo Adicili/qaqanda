@@ -1,11 +1,3 @@
-/**
- * EP01 — Project Foundation & Tooling
- * US03 — Environment Variable Validation
- *
- * Covers:
- *  - EP01-US03-TC03 — No direct `process.env` usage outside lib/env.ts
- */
-
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
@@ -41,6 +33,15 @@ function walk(dir: string, acc: string[] = []) {
 }
 
 us('US03', 'Environment Variable Validation', () => {
+  /**
+   * @testcase EP01-US03-TC03
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Detection of forbidden process.env usage
+   * - Ensures all env access goes exclusively through lib/env.ts
+   * - Guarantees consistent and validated environment configuration
+   */
   tc('EP01-US03-TC03', 'No direct process.env usage outside lib/env.ts', () => {
     const files: string[] = [];
 
