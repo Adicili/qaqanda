@@ -108,8 +108,8 @@ us('US02', 'Linting & Formatting', () => {
     const files = await trackedFilesOrFallback();
     expect(files.length).toBeGreaterThan(0);
 
-    const quoted = files.map((f) => `"${f.replace(/\\/g, '/')}"`).join(' ');
-    const cmd = `pnpm prettier --check ${quoted}`;
+    const normalized = files.map((f) => f.replace(/\\/g, '/'));
+    const cmd = `pnpm prettier --check ${normalized.join(' ')}`;
 
     try {
       const { stdout, stderr } = await run(cmd);

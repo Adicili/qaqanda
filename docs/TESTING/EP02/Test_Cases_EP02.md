@@ -28,7 +28,7 @@ For each test case:
 pnpm qa:api -- -g "EP02-US01-TC01"
 `
     **Description:**  
-    Validates the happy-path registration flow, creation of a new user with role `ENGINEER`, and sanitized API response.
+     Validates the happy-path registration flow, creation of a new user with role `ENGINEER`, and sanitized API response.
 
 **Preconditions:**
 
