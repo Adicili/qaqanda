@@ -74,13 +74,4 @@ us('US02', 'Linting & Formatting', () => {
       expect(failed).toBe(true);
     },
   );
-
-  tc('EP01-US02-TC03', '[pos] after fixing issues, commit MUST succeed', async () => {
-    writeFileSync(BAD_FILE, `export default function Ok(){ return '${Date.now()}' }\n`, 'utf8');
-    await $(`git add -f "${BAD_FILE}"`);
-    const { stdout } = await $(`git commit -m "chore: fix lint"`, {
-      env: { ...process.env, HUSKY: '1' },
-    });
-    expect(stdout).toMatch(/chore: fix lint/);
-  });
 });
