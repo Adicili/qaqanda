@@ -3,7 +3,9 @@ import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
+
+import { us, tc } from '../support/tags';
 
 const execFileP = promisify(execFile);
 
@@ -92,13 +94,22 @@ async function run(cmd: string) {
   }
 }
 
-describe('US02-TC02: Prettier configured and enforces formatting', () => {
-  it('prettier --check on tracked files is clean', async () => {
+us('US02', 'Linting & Formatting', () => {
+  /**
+   * @testcase EP01-US02-TC02
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Prettier configuration correctness
+   * - Enforced formatting across committed files
+   * - Prevents inconsistent code styling
+   */
+  tc('EP01-US02-TC02', 'Prettier configured and enforces formatting', async () => {
     const files = await trackedFilesOrFallback();
     expect(files.length).toBeGreaterThan(0);
 
-    const quoted = files.map((f) => `"${f.replace(/\\/g, '/')}"`).join(' ');
-    const cmd = `pnpm prettier --check ${quoted}`;
+    const normalized = files.map((f) => f.replace(/\\/g, '/'));
+    const cmd = `pnpm prettier --check ${normalized.join(' ')}`;
 
     try {
       const { stdout, stderr } = await run(cmd);

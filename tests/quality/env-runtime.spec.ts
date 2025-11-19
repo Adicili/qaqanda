@@ -1,13 +1,23 @@
-// tests/quality/env-runtime.spec.ts
 import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
+
+import { us, tc } from '../support/tags';
 
 const $ = promisify(exec);
 
-describe('US03 — Environment Variable Validation', () => {
-  it('EP01-US03-TC02: App fails fast if required env vars are missing', async () => {
+us('US03', 'Environment Variable Validation', () => {
+  /**
+   * @testcase EP01-US03-TC02
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - Runtime validation of environment variables
+   * - App must fail fast on missing mandatory env vars
+   * - Ensures no undefined config reaches production runtime
+   */
+  tc('EP01-US03-TC02', 'App fails fast if required env vars are missing', async () => {
     const port = 3200 + Math.floor(Math.random() * 500);
 
     // Strip the env down so we control what matters

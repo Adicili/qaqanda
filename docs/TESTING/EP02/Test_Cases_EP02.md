@@ -13,10 +13,22 @@ For each test case:
 
 ### EP02-US01-TC01
 
-- **Title:** Register with valid data (happy path)
+- **Test name:** EP02-US01-TC01 - Register with valid data
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test helper: `us()` + `tc()` from `tests/support/tags.ts`
+  - Test name: `EP02-US01-TC01 — Register with valid data returns 200`
+  - Command:  
+     `sh
+pnpm qa:api -- -g "EP02-US01-TC01"
+`
+    **Description:**  
+     Validates the happy-path registration flow, creation of a new user with role `ENGINEER`, and sanitized API response.
 
 **Preconditions:**
 
@@ -46,10 +58,23 @@ For each test case:
 
 ### EP02-US01-TC02
 
-- **Title:** Register with existing email
+- **Test name:** EP02-US01-TC02 - Register with existing email
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Helper: `us()` + `tc()`
+  - Test name: `EP02-US01-TC02 — register with existing email returns 409`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC02"
+    ```
+
+**Description:**  
+Ensures that registration fails when an email is already in use.
 
 **Preconditions:**
 
@@ -76,10 +101,22 @@ For each test case:
 
 ### EP02-US01-TC03
 
-- **Title:** Invalid email format rejected
+- **Test name:** EP02-US01-TC03 - Invalid email format rejected
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC03 — invalid email format returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC03"
+    ```
+
+**Description:**  
+Validates backend email format rules.
 
 **Steps:**
 
@@ -101,10 +138,22 @@ For each test case:
 
 ### EP02-US01-TC04
 
-- **Title:** Password must contain special char
+- **Test name:** EP02-US01-TC04 - Password must contain special char
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC04 — password must contain special char returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC04"
+    ```
+
+**Description:**  
+Ensures password policy for special characters is enforced.
 
 **Steps:**
 
@@ -126,10 +175,21 @@ For each test case:
 
 ### EP02-US01-TC05
 
-- **Title:** Password must contain number
+- **Test name:** EP02-US01-TC05 - Password must contain number
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC05 — password must contain a number returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC05"
+    ```
+
+**Description:**  
+Ensures passwords missing digits fail validation.
 
 **Steps:**
 
@@ -151,10 +211,21 @@ For each test case:
 
 ### EP02-US01-TC06
 
-- **Title:** Password must contain be at least 8 chars
+- **Test name:** EP02-US01-TC06 - Password must contain be at least 8 chars
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC06 — password must be at least 8 chars long returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC06"
+    ```
+
+**Description:**  
+Ensures backend enforces minimum password length.
 
 **Steps:**
 
@@ -176,10 +247,21 @@ For each test case:
 
 ### EP02-US01-TC07
 
-- **Title:** Password mismatch rejected
+- **Test name:** EP02-US01-TC07 - Password mismatch rejected
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC07 — password mismatch returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC07"
+    ```
+
+**Description:**  
+Ensures that password confirmation is validated properly.
 
 **Steps:**
 
@@ -201,10 +283,21 @@ For each test case:
 
 ### EP02-US01-TC08
 
-- **Title:** Missing or empty request body
+- **Test name:** EP02-US01-TC08 - Missing or empty request body
+- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Spec file: `tests/api/auth/register.spec.ts`
+  - Test name: `EP02-US01-TC08 — empty body returns 400`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US01-TC08"
+    ```
+
+**Description:**  
+Ensures backend rejects empty or missing payloads.
 
 **Steps:**
 
@@ -217,9 +310,9 @@ For each test case:
 
 ---
 
-### EP02-US01-TC07
+### EP02-US01-TC09
 
-- **Title:** Register form UI validations
+- **Test name:** Register form UI validations
 - **Type:** UI
 - **Priority:** P1
 - **Automate:** Yes
@@ -243,7 +336,7 @@ For each test case:
 
 ### EP02-US02-TC01
 
-- **Title:** Login with valid credentials (happy path)
+- **Test name:** Login with valid credentials (happy path)
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
@@ -273,7 +366,7 @@ For each test case:
 
 ### EP02-US02-TC02
 
-- **Title:** Login with incorrect password
+- **Test name:** Login with incorrect password
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
@@ -292,7 +385,7 @@ For each test case:
 
 ### EP02-US02-TC03
 
-- **Title:** Login with non-existing email
+- **Test name:** Login with non-existing email
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
@@ -311,7 +404,7 @@ For each test case:
 
 ### EP02-US02-TC04
 
-- **Title:** Invalid login body (empty / missing fields)
+- **Test name:** Invalid login body (empty / missing fields)
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
@@ -329,7 +422,7 @@ For each test case:
 
 ### EP02-US02-TC05
 
-- **Title:** Login form UI field validations
+- **Test name:** Login form UI field validations
 - **Type:** UI
 - **Priority:** P1
 - **Automate:** Yes
@@ -349,7 +442,7 @@ For each test case:
 
 ### EP02-US02-TC06
 
-- **Title:** Successful login redirects to home and unlocks protected routes
+- **Test name:** Successful login redirects to home and unlocks protected routes
 - **Type:** UI
 - **Priority:** P0
 - **Automate:** Yes
@@ -376,7 +469,7 @@ For each test case:
 
 ### EP02-US03-TC01
 
-- **Title:** Public routes accessible without authentication
+- **Test name:** Public routes accessible without authentication
 - **Type:** Middleware / UI / API
 - **Priority:** P0
 - **Automate:** Yes
@@ -395,7 +488,7 @@ For each test case:
 
 ### EP02-US03-TC02
 
-- **Title:** Unauthenticated access to `/` redirects to `/login`
+- **Test name:** Unauthenticated access to `/` redirects to `/login`
 - **Type:** Middleware / UI
 - **Priority:** P0
 - **Automate:** Yes
@@ -413,7 +506,7 @@ For each test case:
 
 ### EP02-US03-TC03
 
-- **Title:** Unauthenticated access to `/reports` redirects to `/login`
+- **Test name:** Unauthenticated access to `/reports` redirects to `/login`
 - **Type:** Middleware / UI
 - **Priority:** P0
 - **Automate:** Yes
@@ -430,7 +523,7 @@ For each test case:
 
 ### EP02-US03-TC04
 
-- **Title:** Unauthenticated API call to `/api/ask` returns 401
+- **Test name:** Unauthenticated API call to `/api/ask` returns 401
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
@@ -448,7 +541,7 @@ For each test case:
 
 ### EP02-US03-TC05
 
-- **Title:** ENGINEER accessing `/kb` is blocked
+- **Test name:** ENGINEER accessing `/kb` is blocked
 - **Type:** UI
 - **Priority:** P0
 - **Automate:** Yes
@@ -471,7 +564,7 @@ For each test case:
 
 ### EP02-US03-TC06
 
-- **Title:** ENGINEER accessing `/api/kb/*` receives 403
+- **Test name:** ENGINEER accessing `/api/kb/*` receives 403
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
@@ -489,7 +582,7 @@ For each test case:
 
 ### EP02-US03-TC07
 
-- **Title:** LEAD accessing `/kb` is allowed
+- **Test name:** LEAD accessing `/kb` is allowed
 - **Type:** UI
 - **Priority:** P0
 - **Automate:** Yes
@@ -511,7 +604,7 @@ For each test case:
 
 ### EP02-US03-TC08
 
-- **Title:** LEAD accessing `/api/kb/*` is allowed
+- **Test name:** LEAD accessing `/api/kb/*` is allowed
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
@@ -530,7 +623,7 @@ For each test case:
 
 ### EP02-US03-TC09
 
-- **Title:** Invalid/expired session treated as unauthenticated
+- **Test name:** Invalid/expired session treated as unauthenticated
 - **Type:** Middleware / API
 - **Priority:** P0
 - **Automate:** Yes

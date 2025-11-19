@@ -3,7 +3,9 @@ import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { describe, it, expect } from 'vitest';
+import { expect } from 'vitest';
+
+import { us, tc } from '../support/tags';
 
 const execFileP = promisify(execFile);
 
@@ -71,8 +73,17 @@ async function run(cmd: string) {
   }
 }
 
-describe('US02-TC01: ESLint configured and passes cleanly', () => {
-  it('eslint exits with code 0 on real TS/TSX files', async () => {
+us('US02', 'Linting & Formatting', () => {
+  /**
+   * @testcase EP01-US02-TC01
+   * @doc docs/testing/EP01_Test_Cases.md
+   *
+   * Covers:
+   * - ESLint configuration validity
+   * - Successful lint run across all TS/TSX files
+   * - Prevents committing syntactically invalid or stylistically broken code
+   */
+  tc('EP01-US02-TC01', 'ESLint configured and passes cleanly', async () => {
     const files = await collectTsFiles();
     expect(files.length).toBeGreaterThan(0);
 

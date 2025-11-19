@@ -72,6 +72,63 @@ Pre-commit hook enforces lint + format automatically.
 
 ---
 
+## ✔️ Quality Gates (EP02)
+
+This project follows strict **EP02 Quality Criteria**.  
+Every commit must pass the following automated checks:
+
+### **1. ESLint (US02-TC01)**
+
+```bash
+pnpm lint
+```
+
+### **2. Prettier Formatting (US02-TC02)**
+
+```bash
+pnpm format
+pnpm format:check
+```
+
+### **3. Pre-commit Enforcement (US02-TC03)**
+
+Husky + lint-staged ensure:
+
+- No lint violations
+- No formatting violations
+- Only clean staged files are allowed to commit
+
+### **4. Required NPM Scripts (US02-TC04)**
+
+Mandatory project quality scripts:
+
+| Script              | Purpose               |
+| ------------------- | --------------------- |
+| `pnpm lint`         | Lint full codebase    |
+| `pnpm format`       | Format code           |
+| `pnpm test`         | Run Playwright suite  |
+| `pnpm qa:test`      | Run QA quality checks |
+| `pnpm format:check` | Check formatting only |
+
+### **5. QA Meta Test Suite**
+
+```bash
+pnpm qa:test
+```
+
+Validates:
+
+- Env schema
+- No forbidden `process.env` usage
+- Lint compliance
+- Prettier compliance
+- Pre-commit behavior
+- Playwright config validity
+- Required folder structure
+- Smoke test must pass
+
+---
+
 ## 🧱 Project Structure
 
 ```
@@ -123,10 +180,6 @@ Edit styles in `app/globals.css` and configure paths in `tailwind.config.js`.
 
 ## 🧾 Notes
 
-- Environment variables: define in `.env.local` (ignored by Git).
-- Git hooks auto-run lint & format before every commit.
-- Code style follows **Next.js + Prettier** conventions.
-
----
-
-💡 _Maintained as part of EP01 – Project Foundation and Tooling._
+- Env vars live in `.env.local` (ignored by Git).
+- Git hooks enforce quality on every commit.
+- Project is governed by EP01 + EP02 quality standards.

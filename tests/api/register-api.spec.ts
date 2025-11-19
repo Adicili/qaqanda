@@ -1,14 +1,26 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+
+import { usApi, tcApi } from '../support/api-tags';
 
 import { ENV } from '@/lib/env';
 
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
+const ENDPOINT = `${BASE_URL}/api/auth/register`;
 
-test.describe('EP02-US01 - User Registration API', () => {
-  test('TC-EP02-US01-01 — register with valid data returns 200', async ({ request }) => {
+usApi('EP02-US01', 'User Registration API', () => {
+  /**
+   * @testcase EP02-US01-TC01
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Valid registration
+   * - Default role ENGINEER
+   * - No sensitive data in response
+   */
+  tcApi('EP02-US01-TC01', 'Register with valid data returns 200', async ({ request }) => {
     const uniqueEmail = `newuser+${Date.now()}@example.com`;
 
-    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+    const response = await request.post(ENDPOINT, {
       data: {
         email: uniqueEmail,
         password: 'Passw0rd!',
@@ -23,7 +35,15 @@ test.describe('EP02-US01 - User Registration API', () => {
     expect(json.success).toBe(true);
   });
 
-  test('TC-EP02-US01-02 — register with existing email returns 409', async ({ request }) => {
+  /**
+   * @testcase EP02-US01-TC02
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Duplicate email rejected
+   * - Correct 409 status
+   */
+  tcApi('EP02-US01-TC02', 'Register with existing email returns 409', async ({ request }) => {
     const existingEmail = `dupe+${Date.now()}@example.com`;
 
     const first = await request.post(`${BASE_URL}/api/auth/register`, {
@@ -53,7 +73,14 @@ test.describe('EP02-US01 - User Registration API', () => {
     expect(json.errors.email[0]).toBe('Email already in use');
   });
 
-  test('TC-EP02-US01-03 — invalid email format returns 400', async ({ request }) => {
+  /**
+   * @testcase EP02-US01-TC03
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Email format validation
+   */
+  tcApi('EP02-US01-TC03', 'Invalid email format returns 400', async ({ request }) => {
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: 'invalid email',
@@ -70,7 +97,14 @@ test.describe('EP02-US01 - User Registration API', () => {
     expect(json.errors.email[0]).toBe('Invalid email format');
   });
 
-  test('TC-EP02-US01-04 — password must contain special char returns 400', async ({ request }) => {
+  /**
+   * @testcase EP02-US01-TC04
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Password must contain a special character
+   */
+  tcApi('EP02-US01-TC04', 'Password must contain special char returns 400', async ({ request }) => {
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: `weakpass+${Date.now()}@example.com`,
@@ -88,7 +122,14 @@ test.describe('EP02-US01 - User Registration API', () => {
     expect(json.errors.password[0]).toBe('Password must contain at least one special character');
   });
 
-  test('TC-EP02-US01-05 — password must contain a number returns 400', async ({ request }) => {
+  /**
+   * @testcase EP02-US01-TC05
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Password must contain numeric digit
+   */
+  tcApi('EP02-US01-TC05', 'Password must contain a number returns 400', async ({ request }) => {
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: `weakpass+${Date.now()}@example.com`,
@@ -106,27 +147,43 @@ test.describe('EP02-US01 - User Registration API', () => {
     expect(json.errors.password[0]).toBe('Password must contain at least one number');
   });
 
-  test('TC-EP02-US01-06 — password must be at least 8 chars long returns 400', async ({
-    request,
-  }) => {
-    const response = await request.post(`${BASE_URL}/api/auth/register`, {
-      data: {
-        email: `weakpass+${Date.now()}@example.com`,
-        password: 'weak!1',
-        confirmPassword: 'weak!1',
-      },
-    });
+  /**
+   * @testcase EP02-US01-TC06
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Password length rules
+   */
+  tcApi(
+    'EP02-US01-TC06',
+    'Password must be at least 8 chars long returns 400',
+    async ({ request }) => {
+      const response = await request.post(`${BASE_URL}/api/auth/register`, {
+        data: {
+          email: `weakpass+${Date.now()}@example.com`,
+          password: 'weak!1',
+          confirmPassword: 'weak!1',
+        },
+      });
 
-    expect(response.status()).toBe(400);
+      expect(response.status()).toBe(400);
 
-    const json = await response.json();
+      const json = await response.json();
 
-    expect(json.errors).toBeDefined();
-    expect(json.errors.password).toBeDefined();
-    expect(json.errors.password[0]).toBe('Password must be at least 8 characters');
-  });
+      expect(json.errors).toBeDefined();
+      expect(json.errors.password).toBeDefined();
+      expect(json.errors.password[0]).toBe('Password must be at least 8 characters');
+    },
+  );
 
-  test('TC-EP02-US01-07 — password mismatch returns 400', async ({ request }) => {
+  /**
+   * @testcase EP02-US01-TC07
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Password mismatch validation
+   */
+  tcApi('EP02-US01-TC07', 'Password mismatch returns 400', async ({ request }) => {
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: `mismatch+${Date.now()}@example.com`,
@@ -144,7 +201,15 @@ test.describe('EP02-US01 - User Registration API', () => {
     expect(json.errors.confirmPassword[0]).toBe('Passwords do not match');
   });
 
-  test('TC-EP02-US01-08 — empty body returns 400', async ({ request }) => {
+  /**
+   * @testcase EP02-US01-TC08
+   * @doc docs/testing/EP02_Test_Cases.md
+   *
+   * Covers:
+   * - Missing request body
+   * - Validation error surface
+   */
+  tcApi('EP02-US01-TC08', 'Empty body returns 400', async ({ request }) => {
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {},
     });
