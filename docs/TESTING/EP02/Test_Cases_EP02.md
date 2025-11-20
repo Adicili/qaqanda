@@ -336,6 +336,41 @@ Validate that the `/register` page enforces client-side form validation for emai
 
 ---
 
+### EP02-US01-TC10
+
+- **Test name:** Home page renders and navigation to Register works
+- **Type:** UI
+- **Priority:** P1
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright (UI project)
+  - Spec file: tests/ui/home-ui.spec.ts
+  - Test helper: us() + tc() from tests/support/tags-playwright.ts
+  - Test name: EP02-US01-TC10 — Home page loads and Register navigation works
+  - Command:
+    pnpm test:ui -- -g "EP02-US01-TC10"
+
+**Description:**
+
+Validates that the newly introduced Home page (/) renders correctly with expected UI elements and that navigation to /register works via the homepage link/button. Confirms that the application’s entry point is functional and provides proper routing into the Registration flow.
+
+**Steps:**
+
+1. Open the home page /.
+2. Verify that the home page displays expected content (e.g., title, intro text, CTA button).
+3. Click the "Create Account" / "Register" button or link.
+4. Verify the browser navigates to /register.
+5. Confirm that the Register page displays its main heading.
+
+**Expected Result:**
+
+- Home page renders without errors.
+- Primary CTA for registration is visible and clickable.
+- Clicking CTA navigates the user to /register.
+- /register page displays the expected heading (“Create your QAQ&A account”).
+
+---
+
 ## US02 — Login & Session Cookie
 
 ### EP02-US02-TC01

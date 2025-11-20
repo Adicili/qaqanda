@@ -156,6 +156,26 @@ Client-side validation works: empty submission blocked, email format validated, 
 
 ---
 
+### **EP02-US01-TC10 — Home page renders and navigation to Register works**
+
+**Result:** ✔ Passed
+
+**Summary:**
+The Home page (/) loads successfully and displays expected UI elements including the main hero title and the primary navigation CTA. Clicking the CTA correctly redirects the user to the Registration page.
+
+**What Was Validated:**
+
+- Successful page load (HTTP 200)
+- Hero/landing UI visible
+- "Register" button/link present
+- Navigation to /register works
+- Register page displays expected heading after navigation
+
+**Result:**
+All assertions passed. Home page is functional and correctly leads users into the onboarding flow.
+
+---
+
 ## Summary
 
 All EP02 registration test cases are automated and passing. Validation logic is consistent across backend and frontend. Playwright POM stable, selectors strong, and tagging integrated.
