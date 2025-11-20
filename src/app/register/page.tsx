@@ -105,16 +105,16 @@ export default function RegisterPage() {
           next.password = json.errors.password as string[];
         }
         if (json.errors.confirmPassword) {
-          next.confirmPassword = json.errors.confirmPassword as string[]; // 79
+          next.confirmPassword = json.errors.confirmPassword as string[];
         }
 
         if (json.error && typeof json.error === 'string') {
-          next.global = json.error; // 81
+          next.global = json.error;
         }
 
         setErrors(next);
       } else {
-        setErrors({ global: 'Something went wrong. Please try again.' }); // 83
+        setErrors({ global: 'Something went wrong. Please try again.' });
       }
     } catch {
       setErrors({ global: 'Network error. Please try again.' });
@@ -124,24 +124,25 @@ export default function RegisterPage() {
   }
 
   function handleBlur() {
-    // 87
-    validateClient(form); // 88
+    validateClient(form);
   }
 
   return (
-    // 89
     <main className="flex min-h-screen items-center justify-center bg-slate-950">
       {' '}
-      {/* 90 */}
+      {}
       <section className="w-full max-w-md rounded-lg bg-slate-900 p-6 shadow-lg">
         {' '}
-        {/* 91 */}
-        <h1 className="mb-4 text-center text-2xl font-semibold text-slate-50">
+        {}
+        <h1
+          className="mb-4 text-center text-2xl font-semibold text-slate-50"
+          data-testid="register-title"
+        >
           {' '}
-          {/* 92 */}
-          Create your QAQ&amp;A account {/* 93 */}
+          {}
+          Create your QAQ&amp;A account {}
         </h1>
-        {errors.global && ( // 94
+        {errors.global && (
           <div
             className="mb-4 rounded border border-red-500 bg-red-950 px-3 py-2 text-sm text-red-200"
             data-testid="register-global-error"

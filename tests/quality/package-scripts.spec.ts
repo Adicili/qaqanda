@@ -1,9 +1,9 @@
 import { expect } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 import pkg from '../../package.json' assert { type: 'json' };
 
-us('US02', 'Linting & Formatting', () => {
+us('EP01-US02', 'Linting & Formatting', () => {
   /**
    * @testcase EP01-US02-TC04
    * @doc docs/testing/EP01_Test_Cases.md

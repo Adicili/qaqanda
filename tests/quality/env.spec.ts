@@ -3,9 +3,9 @@ import { resolve } from 'node:path';
 
 import { expect } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 
-us('US03', 'Environment Variable Validation', () => {
+us('EP01-US03', 'Environment Variable Validation', () => {
   /**
    * @testcase EP01-US03-TC01
    * @doc docs/testing/EP01_Test_Cases.md

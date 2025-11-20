@@ -3,7 +3,7 @@ import { join, extname } from 'node:path';
 
 import { expect } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 
 const ROOTS = ['src', 'lib', 'app', 'schemas']; // source roots to police
 const TOP_LEVEL_FILES = ['next.config.ts']; // optionally add more if you want
@@ -32,7 +32,7 @@ function walk(dir: string, acc: string[] = []) {
   return acc;
 }
 
-us('US03', 'Environment Variable Validation', () => {
+us('EP01-US03', 'Environment Variable Validation', () => {
   /**
    * @testcase EP01-US03-TC03
    * @doc docs/testing/EP01_Test_Cases.md

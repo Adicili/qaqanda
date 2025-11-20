@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path';
 
 import { expect, beforeEach, afterEach } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 
 const $ = promisify(exec);
 
@@ -40,7 +40,7 @@ afterEach(() => {
   rmSync(BAD_FILE, { force: true });
 });
 
-us('US02', 'Linting & Formatting', () => {
+us('EP01-US02', 'Linting & Formatting', () => {
   /**
    * @testcase EP01-US02-TC03
    * @doc docs/testing/EP01_Test_Cases.md

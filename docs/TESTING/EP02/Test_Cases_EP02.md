@@ -14,13 +14,12 @@ For each test case:
 ### EP02-US01-TC01
 
 - **Test name:** EP02-US01-TC01 - Register with valid data
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
 - **Automation:**
   - Framework: Playwright API tests
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test helper: `us()` + `tc()` from `tests/support/tags.ts`
   - Test name: `EP02-US01-TC01 — Register with valid data returns 200`
   - Command:  
@@ -59,13 +58,12 @@ pnpm qa:api -- -g "EP02-US01-TC01"
 ### EP02-US01-TC02
 
 - **Test name:** EP02-US01-TC02 - Register with existing email
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
 - **Automation:**
   - Framework: Playwright
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Helper: `us()` + `tc()`
   - Test name: `EP02-US01-TC02 — register with existing email returns 409`
   - Command:
@@ -102,13 +100,12 @@ Ensures that registration fails when an email is already in use.
 ### EP02-US01-TC03
 
 - **Test name:** EP02-US01-TC03 - Invalid email format rejected
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
 - **Automation:**
   - Framework: Playwright
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test name: `EP02-US01-TC03 — invalid email format returns 400`
   - Command:
     ```sh
@@ -139,13 +136,12 @@ Validates backend email format rules.
 ### EP02-US01-TC04
 
 - **Test name:** EP02-US01-TC04 - Password must contain special char
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
 - **Automation:**
   - Framework: Playwright
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test name: `EP02-US01-TC04 — password must contain special char returns 400`
   - Command:
     ```sh
@@ -176,12 +172,11 @@ Ensures password policy for special characters is enforced.
 ### EP02-US01-TC05
 
 - **Test name:** EP02-US01-TC05 - Password must contain number
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
 - **Automation:**
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test name: `EP02-US01-TC05 — password must contain a number returns 400`
   - Command:
     ```sh
@@ -212,12 +207,11 @@ Ensures passwords missing digits fail validation.
 ### EP02-US01-TC06
 
 - **Test name:** EP02-US01-TC06 - Password must contain be at least 8 chars
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
 - **Automation:**
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test name: `EP02-US01-TC06 — password must be at least 8 chars long returns 400`
   - Command:
     ```sh
@@ -248,12 +242,11 @@ Ensures backend enforces minimum password length.
 ### EP02-US01-TC07
 
 - **Test name:** EP02-US01-TC07 - Password mismatch rejected
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
 - **Automation:**
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test name: `EP02-US01-TC07 — password mismatch returns 400`
   - Command:
     ```sh
@@ -284,12 +277,11 @@ Ensures that password confirmation is validated properly.
 ### EP02-US01-TC08
 
 - **Test name:** EP02-US01-TC08 - Missing or empty request body
-- **Spec file:** `tests/api/auth/register.spec.ts`
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
 - **Automation:**
-  - Spec file: `tests/api/auth/register.spec.ts`
+  - Spec file: `tests/api/auth/register-api.spec.ts`
   - Test name: `EP02-US01-TC08 — empty body returns 400`
   - Command:
     ```sh
@@ -316,6 +308,18 @@ Ensures backend rejects empty or missing payloads.
 - **Type:** UI
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright (UI project)
+  - Spec file: `tests/ui/register-ui.spec.ts`
+  - Test name: `EP02-US01-TC09 — Register form UI validations`
+  - Command:
+    ```sh
+    pnpm test:ui -- -g "EP02-US01-TC09"
+    ```
+
+**Description:**
+
+Validate that the `/register` page enforces client-side form validation for email and password fields, and blocks obviously invalid submissions before they reach the API. This includes empty form submission, invalid email format, and mismatching passwords.
 
 **Steps:**
 

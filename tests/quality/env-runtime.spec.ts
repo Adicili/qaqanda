@@ -3,11 +3,11 @@ import { exec } from 'node:child_process';
 
 import { expect } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 
 const $ = promisify(exec);
 
-us('US03', 'Environment Variable Validation', () => {
+us('EP01-US03', 'Environment Variable Validation', () => {
   /**
    * @testcase EP01-US03-TC02
    * @doc docs/testing/EP01_Test_Cases.md
