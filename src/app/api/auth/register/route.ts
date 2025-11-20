@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = result.data;
-    const existingUser = await dbUsers.getByEmail(email);
+    const existingUser = await dbUsers.getUserByEmail(email);
 
     if (existingUser) {
       return NextResponse.json(

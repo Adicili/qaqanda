@@ -10,7 +10,7 @@ export interface User {
 
 const users: User[] = [];
 
-async function getByEmail(email: string): Promise<User | null> {
+async function getUserByEmail(email: string): Promise<User | null> {
   const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   return user ?? null;
 }
@@ -35,6 +35,6 @@ async function create(userData: {
 }
 
 export const dbUsers = {
-  getByEmail,
+  getUserByEmail,
   create,
 };

@@ -1,15 +1,17 @@
+/* eslint-disable no-restricted-properties */
+// playwright.config.ts
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
 import { defineConfig, devices } from '@playwright/test';
 
-import { ENV } from '@/lib/env';
-
-const PORT = ENV.PORT ?? 3000;
-const BASE_URL = ENV.BASE_URL ?? `http://localhost:${PORT}`;
+const PORT = Number(process.env.PORT ?? 3000);
+const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: 'tests',
-  timeout: 30_000,
+  timeout: 30000,
   fullyParallel: true,
-  retries: ENV.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 0,
 
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 
@@ -28,14 +30,14 @@ export default defineConfig({
       use: {
         browserName: 'chromium',
         ...devices['Desktop Chrome'],
-        baseURL: ENV.BASE_URL ?? 'http://localhost:3000',
+        baseURL: BASE_URL,
       },
     },
     {
       name: 'api',
       testDir: 'tests/api',
       use: {
-        baseURL: ENV.BASE_URL ?? 'http://localhost:3000',
+        baseURL: BASE_URL,
       },
     },
   ],
@@ -46,9 +48,5 @@ export default defineConfig({
     reuseExistingServer: true,
     timeout: 120_000,
     cwd: process.cwd(),
-    env: {
-      NODE_ENV: 'development',
-      BASE_URL: `http://localhost:${PORT}`,
-    },
   },
 });
