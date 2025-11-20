@@ -6,7 +6,7 @@ export default function HomePage() {
       {}
       <section className="w-full max-w-2xl rounded-lg bg-slate-900 p-8 shadow-xl">
         {}
-        <h1 className="mb-3 text-center text-3xl font-bold text-slate-50">
+        <h1 className="mb-3 text-center text-3xl font-bold text-slate-50" data-testid="home-title">
           QAQ&amp;A — Internal QA Knowledge Hub
         </h1>
 

@@ -3,7 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 import { expect } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 
 function buildCleanEnv(overrides: Record<string, string>): NodeJS.ProcessEnv {
   const base: NodeJS.ProcessEnv = {
@@ -72,7 +72,7 @@ function startDevServer(): { proc: ChildProcess; url: string } {
   return { proc, url };
 }
 
-us('US01', 'Project Setup & Bootstrap', () => {
+us('EP01-US01', 'Project Setup & Bootstrap', () => {
   /**
    * @testcase EP01-US01-TC03
    * @doc docs/testing/EP01_Test_Cases.md

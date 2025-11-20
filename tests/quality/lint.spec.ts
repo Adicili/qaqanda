@@ -5,7 +5,7 @@ import { join, extname } from 'node:path';
 
 import { expect } from 'vitest';
 
-import { us, tc } from '../support/tags';
+import { us, tc } from '../support/tags-vi';
 
 const execFileP = promisify(execFile);
 
@@ -73,7 +73,7 @@ async function run(cmd: string) {
   }
 }
 
-us('US02', 'Linting & Formatting', () => {
+us('EP01-US02', 'Linting & Formatting', () => {
   /**
    * @testcase EP01-US02-TC01
    * @doc docs/testing/EP01_Test_Cases.md
