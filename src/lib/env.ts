@@ -21,6 +21,7 @@ const baseSchema = z.object({
     })
     .optional(),
   EXPECTED_TITLE: z.string().min(1).optional(),
+  SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 chars'),
 });
 
 const parsed = baseSchema.safeParse(process.env);
@@ -49,4 +50,5 @@ export const ENV = {
   BASE_URL: env.BASE_URL,
   CI: env.CI,
   EXPECTED_TITLE: env.EXPECTED_TITLE,
+  SESSION_SECRET: env.SESSION_SECRET,
 } as const;
