@@ -379,6 +379,18 @@ Validates that the newly introduced Home page (/) renders correctly with expecte
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/login-api.spec.ts`
+  - Test name: `EP02-US02-TC01 — Login with valid credentials (happy path)`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US02-TC01"
+    ```
+
+- **Description:**
+  Validates the happy-path login flow for an existing `ENGINEER` user.  
+  Ensures that valid credentials return `200 OK`, the JSON body `{ "success": true }`, and that a `qaqanda_session` cookie is issued with the correct security flags (`HttpOnly`, `SameSite=Lax`; `Secure` only in production).
 
 **Preconditions:**
 
@@ -409,6 +421,18 @@ Validates that the newly introduced Home page (/) renders correctly with expecte
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/login-api.spec.ts`
+  - Test name: `EP02-US02-TC02 — Login with incorrect password`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US02-TC02"
+    ```
+
+- **Description:**
+  Ensures that logging in with a valid email but wrong password fails safely.  
+  Expects `401 Unauthorized`, a generic error message (`"Invalid email or password"`) to avoid user enumeration, and confirms that **no** session cookie is set on failed authentication.
 
 **Steps:**
 
@@ -428,6 +452,18 @@ Validates that the newly introduced Home page (/) renders correctly with expecte
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/login-api.spec.ts`
+  - Test name: `EP02-US02-TC03 — Login with non-existing email`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US02-TC03"
+    ```
+
+- **Description:**
+  Validates that login attempts with an email that does not exist in the system are rejected with `401 Unauthorized`.  
+  Confirms the backend returns the same generic error message as for wrong passwords to prevent user enumeration, and that no `Set-Cookie` header is present.
 
 **Steps:**
 
@@ -447,6 +483,18 @@ Validates that the newly introduced Home page (/) renders correctly with expecte
 - **Type:** API
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/login-api.spec.ts`
+  - Test name: `EP02-US02-TC04 — Invalid login body (empty / missing fields)`
+  - Command:
+    ```sh
+    pnpm qa:api -- -g "EP02-US02-TC04"
+    ```
+
+- **Description:**
+  Covers validation behavior when the login request body is structurally invalid (e.g. `{}` with no `email` or `password`).  
+  Expects `400 Bad Request` with a clear validation error (`"Invalid login data"`) and structured details payload, ensuring the API fails fast before any auth logic or session handling is executed.
 
 **Steps:**
 
