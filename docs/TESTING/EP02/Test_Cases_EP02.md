@@ -513,6 +513,15 @@ Validates that the newly introduced Home page (/) renders correctly with expecte
 - **Type:** UI
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI tests
+  - Spec file: tests/ui/login-ui.spec.ts
+  - Test name: EP02-US02-TC05 — Login form UI field validations
+  - Command:
+    pnpm qa:ui -- -g "EP02-US02-TC05"
+
+**Description:**
+Verifies that the /login page performs client-side validation and prevents submitting clearly invalid input. Ensures that empty fields and incorrectly formatted email values trigger inline validation errors and that no login API request is sent until the form becomes valid.
 
 **Steps:**
 
@@ -533,6 +542,15 @@ Validates that the newly introduced Home page (/) renders correctly with expecte
 - **Type:** UI
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI tests
+  - Spec file: tests/ui/login-ui.spec.ts
+  - Test name: EP02-US02-TC06 — Successful login redirects to home
+  - Command:
+    pnpm qa:ui -- -g "EP02-US02-TC06"
+
+**Description:**
+Validates the happy-path login flow. Ensures that a valid user can successfully authenticate through the UI, receive a session cookie, get redirected to the home page (/), and subsequently access protected routes without being redirected back to /login.
 
 **Preconditions:**
 

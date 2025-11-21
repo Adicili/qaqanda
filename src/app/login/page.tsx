@@ -84,7 +84,9 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg">
-        <h1 className="text-2xl font-semibold text-slate-50 mb-2">Login to QAQ&A</h1>
+        <h1 className="text-2xl font-semibold text-slate-50 mb-2" data-test-id="login-title">
+          Login to QAQ&A
+        </h1>
         <p className="text-sm text-slate-400 mb-6">
           Enter your credentials to access your dashboard.
         </p>
@@ -112,7 +114,11 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
             />
-            {fieldErrors.email && <p className="text-xs text-red-300">{fieldErrors.email}</p>}
+            {fieldErrors.email && (
+              <p className="text-xs text-red-300" data-test-id="login-emailError">
+                {fieldErrors.email}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">
@@ -128,7 +134,11 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
             />
-            {fieldErrors.password && <p className="text-xs text-red-300">{fieldErrors.password}</p>}
+            {fieldErrors.password && (
+              <p className="text-xs text-red-300" data-test-id="login-passwordError">
+                {fieldErrors.password}
+              </p>
+            )}
           </div>
 
           <button
