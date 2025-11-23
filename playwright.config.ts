@@ -9,6 +9,7 @@ const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: 'tests',
+  globalSetup: './tests/support/global-setup.ts',
   timeout: 30000,
   fullyParallel: true,
   retries: process.env.CI ? 2 : 0,

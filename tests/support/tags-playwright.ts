@@ -8,3 +8,7 @@ export function us(id: string, name: string, fn: () => void) {
 export function tc(id: string, name: string, fn: (args: any, testInfo: any) => any) {
   return (test as any)(`${id} — ${name}`, fn);
 }
+
+export function tcSkip(id: string, name: string, fn: (args: any, testInfo: any) => any) {
+  return (test.skip as any)(`${id} — ${name}`, fn);
+}

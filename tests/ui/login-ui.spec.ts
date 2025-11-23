@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 
 import { us, tc } from '../support/tags-playwright';
+import { ensureEngineerUser } from '../support/users';
 
 import { LoginPage } from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
@@ -8,26 +9,6 @@ import { HomePage } from './pages/HomePage';
 import { ENV } from '@/lib/env';
 
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
-const REGISTER_ENDPOINT = `${BASE_URL}/api/auth/register`;
-
-// Precondition: ensure that user exists
-
-async function ensureEngineerUser(request: any) {
-  const email = 'engineer@example.com';
-  const password = 'Passw0rd!';
-
-  const response = await request.post(REGISTER_ENDPOINT, {
-    data: {
-      email,
-      password,
-      confirmPassword: password,
-    },
-  });
-
-  expect([200, 409]).toContain(response.status());
-
-  return { email, password };
-}
 
 us('EP02-US02', 'Login & Session Cookie (API)', () => {
   /**

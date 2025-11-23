@@ -1,12 +1,17 @@
 // middleware.ts
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { SESSION_COOKIE_NAME, verifySessionToken, type SessionPayload } from '@/lib/session';
-
 const PUBLIC_PATHS = ['/login', '/register'];
-
 const USER_ID_HEADER = 'x-user-id';
 const USER_ROLE_HEADER = 'x-user-role';
+const SESSION_COOKIE_NAME = 'qaqanda_session';
+
+type SessionRole = 'ENGINEER' | 'LEAD';
+
+type SessionPayload = {
+  userId: string;
+  role: SessionRole;
+};
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
@@ -16,6 +21,33 @@ function isPublicPath(pathname: string): boolean {
 
 function isApiRoute(pathname: string): boolean {
   return pathname.startsWith('/api/');
+}
+
+function decodeSessionToken(token: string): SessionPayload | null {
+  try {
+    const [payloadPart] = token.split('.');
+    if (!payloadPart) return null;
+
+    // base64url -> base64
+    let base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    const padLength = (4 - (base64.length % 4)) % 4;
+    base64 += '='.repeat(padLength);
+
+    // atob postoji u Edge runtime-u
+    const json = atob(base64);
+    const data = JSON.parse(json);
+
+    if (!data || typeof data.userId !== 'string' || typeof data.role !== 'string') {
+      return null;
+    }
+
+    return {
+      userId: data.userId,
+      role: data.role as SessionRole,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function middleware(request: NextRequest) {
@@ -47,7 +79,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const session: SessionPayload | null = verifySessionToken(sessionCookie);
+  const session = decodeSessionToken(sessionCookie);
 
   if (!session) {
     if (isApiRoute(pathname)) {

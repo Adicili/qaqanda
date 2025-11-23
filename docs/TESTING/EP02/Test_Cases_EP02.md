@@ -578,6 +578,21 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Type:** Middleware / UI / API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Not implemented as a standalone Playwright test.
+  - This test case is **covered indirectly** by the following automated suites:
+    - `EP02-US01` — Registration API/UI tests
+    - `EP02-US02` — Login API/UI tests
+  - All these tests run with **middleware enabled**, confirming that public routes  
+    (`/login`, `/register`, `/api/auth/*`) remain accessible without authentication.
+
+- **Description:**
+  Validates that public routes remain unrestricted even after middleware is introduced.
+  Ensures that anonymous users can still load `/login`, `/register`, and all `/api/auth/*`
+  endpoints without being redirected or blocked.  
+  Middleware cannot break public pages or authentication flows, and this is confirmed
+  through the execution of US01 and US02 automated tests, which exercise these routes
+  extensively in unauthenticated states.
 
 **Steps:**
 
