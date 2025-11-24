@@ -3,9 +3,7 @@ import { promisify } from 'node:util';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 
-import { expect, beforeEach, afterEach } from 'vitest';
-
-import { us, tc } from '../support/tags-vi';
+import { expect, beforeEach, afterEach, it, describe } from 'vitest';
 
 const $ = promisify(exec);
 
@@ -40,7 +38,7 @@ afterEach(() => {
   rmSync(BAD_FILE, { force: true });
 });
 
-us('EP01-US02', 'Linting & Formatting', () => {
+describe('EP01-US02 - Linting & Formatting', () => {
   /**
    * @testcase EP01-US02-TC03
    * @doc docs/testing/EP01_Test_Cases.md
@@ -50,28 +48,24 @@ us('EP01-US02', 'Linting & Formatting', () => {
    * - lint-staged rejection of improperly formatted code
    * - Prevents broken/dirty changes from entering git history
    */
-  tc(
-    'EP01-US02-TC03',
-    '[neg] commit with violations MUST fail due to husky/lint-staged',
-    async () => {
-      // Unused import + forbidden console.log to trip your rules
-      writeFileSync(
-        BAD_FILE,
-        `import React from 'react';\nconsole.log('trash')\nexport default function Bad(){ return null }\n`,
-        'utf8',
-      );
+  it('EP01-US02-TC03 - [neg] commit with violations MUST fail due to husky/lint-staged', async () => {
+    // Unused import + forbidden console.log to trip your rules
+    writeFileSync(
+      BAD_FILE,
+      `import React from 'react';\nconsole.log('trash')\nexport default function Bad(){ return null }\n`,
+      'utf8',
+    );
 
-      await $(`git add -f "${BAD_FILE}"`);
-      let failed = false;
-      try {
-        await $(`git commit -m "test: provoke lint fail"`, { env: { ...process.env, HUSKY: '1' } });
-      } catch (e: any) {
-        failed = true;
-        const out = (e.stdout || '') + (e.stderr || '');
-        // prove ESLint actually blocked it
-        expect(out).toMatch(/ESLint|no-console|no-unused-vars/i);
-      }
-      expect(failed).toBe(true);
-    },
-  );
+    await $(`git add -f "${BAD_FILE}"`);
+    let failed = false;
+    try {
+      await $(`git commit -m "test: provoke lint fail"`, { env: { ...process.env, HUSKY: '1' } });
+    } catch (e: any) {
+      failed = true;
+      const out = (e.stdout || '') + (e.stderr || '');
+      // prove ESLint actually blocked it
+      expect(out).toMatch(/ESLint|no-console|no-unused-vars/i);
+    }
+    expect(failed).toBe(true);
+  });
 });

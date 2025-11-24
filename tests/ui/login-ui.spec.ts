@@ -1,6 +1,5 @@
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import { us, tc } from '../support/tags-playwright';
 import { ensureEngineerUser } from '../support/users';
 
 import { LoginPage } from './pages/LoginPage';
@@ -10,17 +9,21 @@ import { ENV } from '@/lib/env';
 
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
 
-us('EP02-US02', 'Login & Session Cookie (API)', () => {
+test.describe('EP02-US02 - Login & Session Cookie (API)', () => {
   /**
-   * @testcase EP02-US02-TC05
-   * @doc docs/TESTING/EP02/Test_Cases_EP02.md
-   *
    * Covers:
    * - UI validation on /login
    * - Inline errors for empty fields
    * - Blocking obviously invalid submission (no API call)
    */
-  tc('EP02-US02-TC05', 'Login form UI field validations', async ({ page }) => {
+  test('EP02-US02-TC05 - Login form UI field validations', async ({ page }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC05' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US02' },
+      );
     const loginPage = new LoginPage(page);
 
     const loginRequests: string[] = [];
@@ -75,29 +78,35 @@ us('EP02-US02', 'Login & Session Cookie (API)', () => {
    * - Redirect to home page (/)
    * - Home title visible after login
    */
-  tc(
-    'EP02-US02-TC06',
-    'Successful login redirects to home and unlocks protected routes',
-    async ({ page, request }) => {
-      const { email, password } = await ensureEngineerUser(request);
-      const loginPage = new LoginPage(page);
-      const homePage = new HomePage(page);
+  test('EP02-US02-TC06 - Successful login redirects to home and unlocks protected routes', async ({
+    page,
+    request,
+  }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC06' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US02' },
+      );
+    const { email, password } = await ensureEngineerUser(request);
+    const loginPage = new LoginPage(page);
+    const homePage = new HomePage(page);
 
-      // Open login page
-      await loginPage.open(BASE_URL);
+    // Open login page
+    await loginPage.open(BASE_URL);
 
-      // Invalid email format
-      await loginPage.fillFields(email, password);
-      await loginPage.submit();
+    // Invalid email format
+    await loginPage.fillFields(email, password);
+    await loginPage.submit();
 
-      // Redirected on home page (/)
-      await expect(page).toHaveURL(`${BASE_URL}/`);
+    // Redirected on home page (/)
+    await expect(page).toHaveURL(`${BASE_URL}/`);
 
-      // Home title is visible
-      await expect(homePage.title).toBeVisible();
+    // Home title is visible
+    await expect(homePage.title).toBeVisible();
 
-      // Login error banner is not displayed
-      await expect(loginPage.pageError).toBeHidden();
-    },
-  );
+    // Login error banner is not displayed
+    await expect(loginPage.pageError).toBeHidden();
+  });
 });

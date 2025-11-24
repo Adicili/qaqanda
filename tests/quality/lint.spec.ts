@@ -3,9 +3,7 @@ import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { expect } from 'vitest';
-
-import { us, tc } from '../support/tags-vi';
+import { expect, it, describe } from 'vitest';
 
 const execFileP = promisify(execFile);
 
@@ -73,7 +71,7 @@ async function run(cmd: string) {
   }
 }
 
-us('EP01-US02', 'Linting & Formatting', () => {
+describe('EP01-US02 - Linting & Formatting', () => {
   /**
    * @testcase EP01-US02-TC01
    * @doc docs/testing/EP01_Test_Cases.md
@@ -83,7 +81,7 @@ us('EP01-US02', 'Linting & Formatting', () => {
    * - Successful lint run across all TS/TSX files
    * - Prevents committing syntactically invalid or stylistically broken code
    */
-  tc('EP01-US02-TC01', 'ESLint configured and passes cleanly', async () => {
+  it('EP01-US02-TC01 - ESLint configured and passes cleanly', async () => {
     const files = await collectTsFiles();
     expect(files.length).toBeGreaterThan(0);
 

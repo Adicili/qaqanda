@@ -3,9 +3,7 @@ import { promisify } from 'node:util';
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { expect } from 'vitest';
-
-import { us, tc } from '../support/tags-vi';
+import { expect, it, describe } from 'vitest';
 
 const execFileP = promisify(execFile);
 
@@ -94,7 +92,7 @@ async function run(cmd: string) {
   }
 }
 
-us('EP01-US02', 'Linting & Formatting', () => {
+describe('EP01-US02 - Linting & Formatting', () => {
   /**
    * @testcase EP01-US02-TC02
    * @doc docs/testing/EP01_Test_Cases.md
@@ -104,7 +102,7 @@ us('EP01-US02', 'Linting & Formatting', () => {
    * - Enforced formatting across committed files
    * - Prevents inconsistent code styling
    */
-  tc('EP01-US02-TC02', 'Prettier configured and enforces formatting', async () => {
+  it('EP01-US02-TC02 - Prettier configured and enforces formatting', async () => {
     const files = await trackedFilesOrFallback();
     expect(files.length).toBeGreaterThan(0);
 

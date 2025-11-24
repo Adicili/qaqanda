@@ -1,6 +1,4 @@
-import { expect } from '@playwright/test';
-
-import { us, tc } from '../support/tags-playwright';
+import { expect, test } from '@playwright/test';
 
 import { RegisterPage } from './pages/RegisterPage';
 
@@ -8,7 +6,7 @@ import { ENV } from '@/lib/env';
 
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
 
-us('EP02-US01', 'User Registration Flow (UI)', () => {
+test.describe('EP02-US01 - User Registration Flow (UI)', () => {
   /**
    * @testcase EP02-US01-TC09
    * @doc docs/TESTING/EP02/Test_Cases_EP02.md
@@ -18,7 +16,7 @@ us('EP02-US01', 'User Registration Flow (UI)', () => {
    * - Blocking submit on obviously invalid input
    * - No API calls triggered when form is invalid
    */
-  tc('EP02-US01-TC09', 'Register form UI validations', async ({ page }) => {
+  test('EP02-US01-TC09 - Register form UI validations', async ({ page }) => {
     const registerPage = new RegisterPage(page);
 
     const registerRequests: string[] = [];
