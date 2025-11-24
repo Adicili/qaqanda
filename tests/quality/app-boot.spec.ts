@@ -1,9 +1,7 @@
 import { spawn, ChildProcess } from 'node:child_process';
 import { setTimeout as delay } from 'node:timers/promises';
 
-import { expect } from 'vitest';
-
-import { us, tc } from '../support/tags-vi';
+import { expect, it, describe } from 'vitest';
 
 function buildCleanEnv(overrides: Record<string, string>): NodeJS.ProcessEnv {
   const base: NodeJS.ProcessEnv = {
@@ -72,7 +70,7 @@ function startDevServer(): { proc: ChildProcess; url: string } {
   return { proc, url };
 }
 
-us('EP01-US01', 'Project Setup & Bootstrap', () => {
+describe('EP01-US01 - Project Setup & Bootstrap', () => {
   /**
    * @testcase EP01-US01-TC03
    * @doc docs/testing/EP01_Test_Cases.md
@@ -82,28 +80,23 @@ us('EP01-US01', 'Project Setup & Bootstrap', () => {
    * - Next.js dev server responds on BASE_URL
    * - Detects breaking changes preventing app startup
    */
-  tc(
-    'EP01-US01-TC03',
-    'Next.js app boots successfully on http://localhost:3000',
-    async () => {
-      const { proc, url } = startDevServer();
+  it('EP01-US01-TC03 - Next.js app boots successfully on http://localhost:3000', async () => {
+    const { proc, url } = startDevServer();
 
-      let error: unknown | null = null;
+    let error: unknown | null = null;
 
-      try {
-        const res = await waitForHttpOk(url, proc);
-        expect(res.status).toBe(200);
+    try {
+      const res = await waitForHttpOk(url, proc);
+      expect(res.status).toBe(200);
 
-        const html = await res.text();
-        expect(html).toMatch(/<html/i);
-      } catch (e) {
-        error = e;
-      } finally {
-        proc.kill();
-      }
+      const html = await res.text();
+      expect(html).toMatch(/<html/i);
+    } catch (e) {
+      error = e;
+    } finally {
+      proc.kill();
+    }
 
-      if (error) throw error;
-    },
-    60_000,
-  );
+    if (error) throw error;
+  }, 60_000);
 });

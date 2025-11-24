@@ -1,23 +1,25 @@
-import { expect } from '@playwright/test';
-
-import { us, tc } from '../support/tags-playwright';
+import { expect, test } from '@playwright/test';
 
 import { ENV } from '@/lib/env';
 
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
 const ENDPOINT = `${BASE_URL}/api/auth/register`;
 
-us('EP02-US01', 'User Registration API', () => {
+test.describe('EP02-US01 - User Registration API', () => {
   /**
-   * @testcase EP02-US01-TC01
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Valid registration
    * - Default role ENGINEER
    * - No sensitive data in response
    */
-  tc('EP02-US01-TC01', 'Register with valid data returns 200', async ({ request }) => {
+  test('EP02-US01-TC01 - Register with valid data returns 200', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US01-TC01' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const uniqueEmail = `newuser+${Date.now()}@example.com`;
 
     const response = await request.post(ENDPOINT, {
@@ -36,14 +38,18 @@ us('EP02-US01', 'User Registration API', () => {
   });
 
   /**
-   * @testcase EP02-US01-TC02
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Duplicate email rejected
    * - Correct 409 status
    */
-  tc('EP02-US01-TC02', 'Register with existing email returns 409', async ({ request }) => {
+  test('EP02-US01-TC02 - Register with existing email returns 409', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC02' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const existingEmail = `dupe+${Date.now()}@example.com`;
 
     const first = await request.post(`${BASE_URL}/api/auth/register`, {
@@ -74,13 +80,17 @@ us('EP02-US01', 'User Registration API', () => {
   });
 
   /**
-   * @testcase EP02-US01-TC03
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Email format validation
    */
-  tc('EP02-US01-TC03', 'Invalid email format returns 400', async ({ request }) => {
+  test('EP02-US01-TC03 - Invalid email format returns 400', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC03' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: 'invalid email',
@@ -98,13 +108,17 @@ us('EP02-US01', 'User Registration API', () => {
   });
 
   /**
-   * @testcase EP02-US01-TC04
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Password must contain a special character
    */
-  tc('EP02-US01-TC04', 'Password must contain special char returns 400', async ({ request }) => {
+  test('EP02-US01-TC04 - Password must contain special char returns 400', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US01-TC04' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: `weakpass+${Date.now()}@example.com`,
@@ -123,13 +137,17 @@ us('EP02-US01', 'User Registration API', () => {
   });
 
   /**
-   * @testcase EP02-US01-TC05
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Password must contain numeric digit
    */
-  tc('EP02-US01-TC05', 'Password must contain a number returns 400', async ({ request }) => {
+  test('EP02-US01-TC05 - Password must contain a number returns 400', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US01-TC05' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: `weakpass+${Date.now()}@example.com`,
@@ -148,42 +166,48 @@ us('EP02-US01', 'User Registration API', () => {
   });
 
   /**
-   * @testcase EP02-US01-TC06
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Password length rules
    */
-  tc(
-    'EP02-US01-TC06',
-    'Password must be at least 8 chars long returns 400',
-    async ({ request }) => {
-      const response = await request.post(`${BASE_URL}/api/auth/register`, {
-        data: {
-          email: `weakpass+${Date.now()}@example.com`,
-          password: 'weak!1',
-          confirmPassword: 'weak!1',
-        },
-      });
+  test('EP02-US01-TC06 - Password must be at least 8 chars long returns 400', async ({
+    request,
+  }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US01-TC06' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
+    const response = await request.post(`${BASE_URL}/api/auth/register`, {
+      data: {
+        email: `weakpass+${Date.now()}@example.com`,
+        password: 'weak!1',
+        confirmPassword: 'weak!1',
+      },
+    });
 
-      expect(response.status()).toBe(400);
+    expect(response.status()).toBe(400);
 
-      const json = await response.json();
+    const json = await response.json();
 
-      expect(json.errors).toBeDefined();
-      expect(json.errors.password).toBeDefined();
-      expect(json.errors.password[0]).toBe('Password must be at least 8 characters');
-    },
-  );
+    expect(json.errors).toBeDefined();
+    expect(json.errors.password).toBeDefined();
+    expect(json.errors.password[0]).toBe('Password must be at least 8 characters');
+  });
 
   /**
-   * @testcase EP02-US01-TC07
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Password mismatch validation
    */
-  tc('EP02-US01-TC07', 'Password mismatch returns 400', async ({ request }) => {
+  test('EP02-US01-TC07 - Password mismatch returns 400', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US01-TC07' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {
         email: `mismatch+${Date.now()}@example.com`,
@@ -202,14 +226,18 @@ us('EP02-US01', 'User Registration API', () => {
   });
 
   /**
-   * @testcase EP02-US01-TC08
-   * @doc docs/testing/EP02_Test_Cases.md
-   *
    * Covers:
    * - Missing request body
    * - Validation error surface
    */
-  tc('EP02-US01-TC08', 'Empty body returns 400', async ({ request }) => {
+  test('EP02-US01-TC08 - Empty body returns 400', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US01-TC08' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US01' },
+      );
     const response = await request.post(`${BASE_URL}/api/auth/register`, {
       data: {},
     });

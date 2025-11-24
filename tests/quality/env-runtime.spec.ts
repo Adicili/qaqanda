@@ -1,13 +1,11 @@
 import { promisify } from 'node:util';
 import { exec } from 'node:child_process';
 
-import { expect } from 'vitest';
-
-import { us, tc } from '../support/tags-vi';
+import { expect, it, describe } from 'vitest';
 
 const $ = promisify(exec);
 
-us('EP01-US03', 'Environment Variable Validation', () => {
+describe('EP01-US03 - Environment Variable Validation', () => {
   /**
    * @testcase EP01-US03-TC02
    * @doc docs/testing/EP01_Test_Cases.md
@@ -17,7 +15,7 @@ us('EP01-US03', 'Environment Variable Validation', () => {
    * - App must fail fast on missing mandatory env vars
    * - Ensures no undefined config reaches production runtime
    */
-  tc('EP01-US03-TC02', 'App fails fast if required env vars are missing', async () => {
+  it('EP01-US03-TC02 - App fails fast if required env vars are missing', async () => {
     const port = 3200 + Math.floor(Math.random() * 500);
 
     // Strip the env down so we control what matters

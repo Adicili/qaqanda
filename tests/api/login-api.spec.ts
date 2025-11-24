@@ -1,6 +1,5 @@
-import { expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import { us, tc } from '../support/tags-playwright';
 import { ensureEngineerUser } from '../support/users';
 
 import { ENV } from '@/lib/env';
@@ -8,17 +7,21 @@ import { ENV } from '@/lib/env';
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
 const LOGIN_ENDPOINT = `${BASE_URL}/api/auth/login`;
 
-us('EP02-US02', 'Login & Session Cookie (API)', () => {
+test.describe('EP02-US02 - Login & Session Cookie (API)', () => {
   /**
-   * @testcase EP02-US02-TC01
-   * @doc docs/TESTING/EP02/Test_Cases_EP02.md
-   *
    * Covers:
    * - Happy-path login with existing ENGINEER user
    * - 200 OK + { success: true } body
    * - Session cookie issued with HttpOnly + SameSite=Lax flags
    */
-  tc('EP02-US02-TC01', 'Login with valid credentials', async ({ request }) => {
+  test('EP02-US02-TC01 - Login with valid credentials', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC01' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US02' },
+      );
     const { email, password } = await ensureEngineerUser(request);
 
     const response = await request.post(LOGIN_ENDPOINT, {
@@ -42,15 +45,19 @@ us('EP02-US02', 'Login & Session Cookie (API)', () => {
   });
 
   /**
-   * @testcase EP02-US02-TC02
-   * @doc docs/TESTING/EP02/Test_Cases_EP02.md
-   *
    * Covers:
    * - Login with correct email but wrong password
    * - 401 Unauthorized
    * - No session cookie issued on failure
    */
-  tc('EP02-US02-TC02', 'Login with incorrect password', async ({ request }) => {
+  test('EP02-US02-TC02 - Login with incorrect password', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC02' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US02' },
+      );
     const { email } = await ensureEngineerUser(request);
 
     const response = await request.post(LOGIN_ENDPOINT, {
@@ -70,15 +77,19 @@ us('EP02-US02', 'Login & Session Cookie (API)', () => {
   });
 
   /**
-   * @testcase EP02-US02-TC03
-   * @doc docs/TESTING/EP02/Test_Cases_EP02.md
-   *
    * Covers:
    * - Login attempt with non-existing email
    * - 401 Unauthorized with generic message (no user enumeration)
    * - No session cookie issued
    */
-  tc('EP02-US02-TC03', 'Login with non-existing email', async ({ request }) => {
+  test('EP02-US02-TC03 - Login with non-existing email', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC03' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US02' },
+      );
     const response = await request.post(LOGIN_ENDPOINT, {
       data: {
         email: 'not-exists@example.com',
@@ -96,14 +107,18 @@ us('EP02-US02', 'Login & Session Cookie (API)', () => {
   });
 
   /**
-   * @testcase EP02-US02-TC04
-   * @doc docs/TESTING/EP02/Test_Cases_EP02.md
-   *
    * Covers:
    * - Invalid login payloads (empty body)
    * - 400 Bad Request + validation error
    */
-  tc('EP02-US02-TC04', 'Invalid login body (empty / missing fields)', async ({ request }) => {
+  test('EP02-US02-TC04 - Invalid login body (empty / missing fields)', async ({ request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP02-US02-TC04' },
+        { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
+        { type: 'us', description: 'EP02-US02' },
+      );
     const response = await request.post(LOGIN_ENDPOINT, {
       data: {},
     });

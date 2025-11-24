@@ -1,9 +1,7 @@
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
 import { join, extname } from 'node:path';
 
-import { expect } from 'vitest';
-
-import { us, tc } from '../support/tags-vi';
+import { expect, it, describe } from 'vitest';
 
 const ROOTS = ['src', 'lib', 'app', 'schemas']; // source roots to police
 const TOP_LEVEL_FILES = ['next.config.ts']; // optionally add more if you want
@@ -32,7 +30,7 @@ function walk(dir: string, acc: string[] = []) {
   return acc;
 }
 
-us('EP01-US03', 'Environment Variable Validation', () => {
+describe('EP01-US03 - Environment Variable Validation', () => {
   /**
    * @testcase EP01-US03-TC03
    * @doc docs/testing/EP01_Test_Cases.md
@@ -42,7 +40,7 @@ us('EP01-US03', 'Environment Variable Validation', () => {
    * - Ensures all env access goes exclusively through lib/env.ts
    * - Guarantees consistent and validated environment configuration
    */
-  tc('EP01-US03-TC03', 'No direct process.env usage outside lib/env.ts', () => {
+  it('EP01-US03-TC03 - No direct process.env usage outside lib/env.ts', () => {
     const files: string[] = [];
 
     // add all source roots
