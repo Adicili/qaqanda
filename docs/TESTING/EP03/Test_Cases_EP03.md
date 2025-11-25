@@ -27,7 +27,16 @@
 
 **Type:** Unit  
 **Priority:** P0  
-**Automate:** Yes → `tests/unit/databricksClient.spec.ts`
+**Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC01 — sends authenticated POST request and maps rows for SELECT`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC01"
+  ```
 
 **Description:**  
 Verify that `executeQuery` sends authenticated POST request to `/api/2.0/sql/statements` and correctly maps returned schema/rows into JS objects.
@@ -66,6 +75,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P0  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC02 — replaces named params with escaped SQL values`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC02"
+  ```
 
 **Steps:**
 buildSqlWithParams(
@@ -89,6 +107,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P1  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC03 — throws if a param in SQL has no value provided`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC03"
+  ```
 
 **Steps:**
 buildSqlWithParams(
@@ -110,6 +137,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P2  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC04 — throws if there are unused params`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC04"
+  ```
 
 **Steps:**
 buildSqlWithParams(
@@ -132,6 +168,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P0  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC05 — retries on 5xx and eventually succeeds`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC05"
+  ```
 
 **Preconditions:**
 
@@ -161,6 +206,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P0  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC06 — throws DatabricksTimeoutError on timeout and respects retries`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC06"
+  ```
 
 **Preconditions:**
 
@@ -188,6 +242,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P0  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC07 — throws DatabricksClientError on non-5xx failure`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC07"
+  ```
 
 **Preconditions:**
 
@@ -213,6 +276,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P1  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC08 — returns empty array for statements without result set (e.g. INSERT)`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC08"
+  ```
 
 **Preconditions:**
 
@@ -238,6 +310,15 @@ Copy code
 **Type:** Unit  
 **Priority:** P0  
 **Automate:** Yes
+**Automation:**
+
+- Framework: Vitest (unit)
+- Spec file: `tests/unit/databricksClient.spec.ts`
+- Test name: `EP03-US01-TC09 — fails fast when ENV is missing Databricks config`
+- Command:
+  ```sh
+  pnpm test:unit -- -t "EP03-US01-TC09"
+  ```
 
 **Preconditions:**
 

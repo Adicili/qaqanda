@@ -170,4 +170,22 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
     const rows = await executeQuery('INSERT INTO users VALUES (1)');
     expect(rows).toEqual([]);
   });
+
+  it('EP03-US01-TC09 — fails fast when ENV is missing Databricks config', async () => {
+    // Override ENV mock to simulate missing config
+    vi.doMock('@/lib/env', () => ({
+      ENV: {
+        DATABRICKS_HOST: undefined,
+        DATABRICKS_TOKEN: undefined,
+      },
+    }));
+
+    // Re-import module so it picks up the new mock
+    const { executeQuery } = await import('@/lib/databricksClient');
+
+    await expect(executeQuery('SELECT 1')).rejects.toBeInstanceOf(DatabricksClientError);
+
+    // fetch must NEVER be called
+    expect(globalAny.fetch).not.toHaveBeenCalled();
+  });
 });
