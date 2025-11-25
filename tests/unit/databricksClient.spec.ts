@@ -1,4 +1,3 @@
-// tests/unit/databricksClient.spec.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
@@ -17,8 +16,8 @@ vi.mock('@/lib/env', () => ({
 
 const globalAny: any = global;
 
-describe('EP03-US01 - DatabricksClient - buildSqlWithParams', () => {
-  it('EP03-US01 - replaces named params with escaped SQL values', () => {
+describe('EP03-US01 — DatabricksClient — buildSqlWithParams', () => {
+  it('EP03-US01-TC02 — replaces named params with escaped SQL values', () => {
     const sql = 'SELECT * FROM users WHERE email = :email AND active = :active';
     const result = buildSqlWithParams(sql, {
       email: "o'connor@example.com",
@@ -30,13 +29,13 @@ describe('EP03-US01 - DatabricksClient - buildSqlWithParams', () => {
     );
   });
 
-  it('throws if a param in SQL has no value provided', () => {
+  it('EP03-US01-TC03 — throws if a param in SQL has no value provided', () => {
     const sql = 'SELECT * FROM users WHERE id = :id';
 
     expect(() => buildSqlWithParams(sql, {})).toThrow(DatabricksClientError);
   });
 
-  it('throws if there are unused params', () => {
+  it('EP03-US01-TC04 — throws if there are unused params', () => {
     const sql = 'SELECT * FROM users WHERE id = :id';
 
     expect(() =>
@@ -48,7 +47,7 @@ describe('EP03-US01 - DatabricksClient - buildSqlWithParams', () => {
   });
 });
 
-describe('DatabricksClient - executeQuery', () => {
+describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   beforeEach(() => {
     globalAny.fetch = vi.fn();
   });
@@ -57,7 +56,7 @@ describe('DatabricksClient - executeQuery', () => {
     vi.clearAllMocks();
   });
 
-  it('sends authenticated POST request and maps rows for SELECT', async () => {
+  it('EP03-US01-TC01 — sends authenticated POST request and maps rows for SELECT', async () => {
     const mockResponse = {
       status: { state: 'FINISHED' },
       result: {
@@ -101,7 +100,7 @@ describe('DatabricksClient - executeQuery', () => {
     ]);
   });
 
-  it('retries on 5xx and eventually succeeds', async () => {
+  it('EP03-US01-TC05 — retries on 5xx and eventually succeeds', async () => {
     const mock500 = {
       ok: false,
       status: 500,
@@ -132,7 +131,7 @@ describe('DatabricksClient - executeQuery', () => {
     expect(rows).toEqual([{ count: 42 }]);
   });
 
-  it('throws DatabricksTimeoutError on timeout and respects retries', async () => {
+  it('EP03-US01-TC06 — throws DatabricksTimeoutError on timeout and respects retries', async () => {
     const abortError = new Error('Aborted');
     (abortError as any).name = 'AbortError';
 
@@ -145,7 +144,7 @@ describe('DatabricksClient - executeQuery', () => {
     expect(globalAny.fetch).toHaveBeenCalledTimes(2);
   });
 
-  it('throws DatabricksClientError on non-5xx failure', async () => {
+  it('EP03-US01-TC07 — throws DatabricksClientError on non-5xx failure', async () => {
     globalAny.fetch.mockResolvedValueOnce({
       ok: false,
       status: 400,
@@ -155,7 +154,7 @@ describe('DatabricksClient - executeQuery', () => {
     await expect(executeQuery('SELECT 1')).rejects.toBeInstanceOf(DatabricksClientError);
   });
 
-  it('returns empty array for statements without result set (e.g. INSERT)', async () => {
+  it('EP03-US01-TC08 — returns empty array for statements without result set (e.g. INSERT)', async () => {
     globalAny.fetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
