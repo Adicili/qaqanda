@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import { ENV } from '@/lib/env';
 import {
   executeQuery,
   buildSqlWithParams,
@@ -172,20 +173,20 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC09 — fails fast when ENV is missing Databricks config', async () => {
-    // Override ENV mock to simulate missing config
-    vi.doMock('@/lib/env', () => ({
-      ENV: {
-        DATABRICKS_HOST: undefined,
-        DATABRICKS_TOKEN: undefined,
-      },
-    }));
+    const prevHost = (ENV as any).DATABRICKS_HOST;
+    const prevToken = (ENV as any).DATABRICKS_TOKEN;
 
-    // Re-import module so it picks up the new mock
-    const { executeQuery } = await import('@/lib/databricksClient');
+    // Simulate missing config
+    (ENV as any).DATABRICKS_HOST = undefined;
+    (ENV as any).DATABRICKS_TOKEN = undefined;
 
     await expect(executeQuery('SELECT 1')).rejects.toBeInstanceOf(DatabricksClientError);
 
-    // fetch must NEVER be called
+    // ensure no HTTP call was made
     expect(globalAny.fetch).not.toHaveBeenCalled();
+
+    // restore original values so other tests are not affected
+    (ENV as any).DATABRICKS_HOST = prevHost;
+    (ENV as any).DATABRICKS_TOKEN = prevToken;
   });
 });
