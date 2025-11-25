@@ -11,6 +11,8 @@
     "format:check": "prettier --check .",
     "qa:test": "vitest run --reporter=verbose",
     "qa:test:watch": "vitest",
+    "test:unit": "vitest run --config vitest.unit.config.ts --reporter=verbose",
+    "test:unit:watch": "vitest --config vitest.unit.config.ts",
     "test": "playwright test",
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
@@ -54,6 +56,7 @@
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5",
+    "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.8"
   }
 }
