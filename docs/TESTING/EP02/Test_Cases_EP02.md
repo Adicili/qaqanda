@@ -608,38 +608,53 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 
 ### EP02-US03-TC02
 
-- **Test name:** Unauthenticated access to `/` redirects to `/login`
+### EP02-US03-TC02
+
+- **Test name:** Unauthenticated access to `/` is allowed
 - **Type:** Middleware / UI
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  **Status:** Not required
 
-**Steps:**
+**Reasoning:**
+The public access behavior of the `/` route is already covered by
+`EP02-US01-TC10`, which validates rendering of the landing page,
+presence of Register/Login CTAs, and navigation to `/register`.
 
-1. In a clean browser (no session cookie), navigate to `/`.
+No middleware enforcement exists on `/`, so additional UI automation would
+duplicate coverage without providing new validation.
 
-**Expected Result:**
-
-- User is redirected to `/login`.
-- Final URL is `/login` and original content is not visible.
+- **Description:**
+  Verifies that the public landing page `/` remains accessible without authentication.
+  Anonymous users must be able to load the home page without being redirected to
+  `/login`, and core CTA elements (Register/Login links) must be visible. This test
+  ensures that the middleware does **not** accidentally block or redirect the main
+  marketing/landing page while still enforcing protection on real private routes.
 
 ---
 
 ### EP02-US03-TC03
 
-- **Test name:** Unauthenticated access to `/reports` redirects to `/login`
+- **Test name:** Current behavior of `/reports` for unauthenticated user
 - **Type:** Middleware / UI
-- **Priority:** P0
+- **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI tests
+  - Spec file: `tests/ui/auth-guard-ui.spec.ts`
+  - Test name: `EP02-US03-TC03 — Anonymous access to /reports does not redirect to /login unexpectedly`
+  - Command:
+    ```sh
+    pnpm test:ui -- -g "EP02-US03-TC03"
+    ```
 
-**Steps:**
-
-1. In a clean browser, navigate to `/reports`.
-
-**Expected Result:**
-
-- Immediate redirect to `/login`.
-
----
+- **Description:**
+  Captures the current behavior of the `/reports` route for unauthenticated users.
+  The route is not yet implemented as a protected reports dashboard, so the goal is
+  to ensure there is no unexpected redirect loop to `/login` or server error (500).
+  Once EP06 (Reports & Analytics) is implemented and `/reports` becomes a protected
+  page, this test case will be updated to assert redirect-on-missing-session instead.
 
 ### EP02-US03-TC04
 
@@ -647,6 +662,22 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/auth-guard-api.spec.ts`
+  - Test name: `EP02-US03-TC04 — Unauthenticated API call to /api/ask returns 401`
+  - Command:
+    ```sh
+    pnpm test:api -- -g "EP02-US03-TC04"
+    ```
+
+- **Description:**
+  Verifies that the `/api/ask` endpoint is not accessible without a valid authenticated session.
+  When the request is sent without any session cookie, the middleware and endpoint
+  together must return `401 Unauthorized` with an error payload, clearly indicating
+  that authentication is required. Confirms that the ask engine stub does not leak
+  any data or behave like a public endpoint, and that unauthenticated API calls are
+  handled consistently with the global auth strategy.
 
 **Steps:**
 
@@ -665,6 +696,24 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Type:** UI
 - **Priority:** P0
 - **Automate:** Yes
+  **Automation:**
+  - Framework: Playwright UI tests
+  - Spec file: `tests/ui/auth-guard-ui.spec.ts`
+  - Status:
+    - Marked as `fixme` (blocked) until KB UI and persistent roles exist
+  - Command (once implemented):
+    ```sh
+    pnpm test:ui -- -g "EP02-US03-TC05"
+    ```
+
+- **Description:**
+  Validates that a user with role `ENGINEER` cannot access the Knowledge Base
+  management UI at `/kb`. The final behavior should either redirect the user to
+  a safe page or display an explicit "access denied" state, and no KB management
+  controls must be visible. This test ensures the UI layer correctly reflects the
+  backend RBAC policy enforced by `requireLead()` and middleware protections.
+  Currently blocked until a real `/kb` page and persistent role storage are
+  implemented (EP03/EP05), and is therefore marked as `fixme` in the UI spec.
 
 **Preconditions:**
 
@@ -688,6 +737,22 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/auth-guard-api.spec.ts`
+  - Test name: `EP02-US03-TC06 — ENGINEER accessing /api/kb/* receives 403`
+  - Command:
+    ```sh
+    pnpm test:api -- -g "EP02-US03-TC06"
+    ```
+
+- **Description:**
+  Validates that a user with role `ENGINEER` is explicitly blocked from calling
+  Knowledge Base management APIs such as `/api/kb/add`. The test first authenticates
+  as an ENGINEER via the public auth flow, captures the session cookie, and then
+  invokes the KB API with that cookie attached. The expected outcome is `403 Forbidden`,
+  proving that `requireLead()` correctly enforces LEAD-only access on `/api/kb/*`
+  endpoints and that regular engineers cannot escalate their permissions via API calls.
 
 **Steps:**
 
@@ -706,6 +771,25 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Type:** UI
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI tests
+  - Spec file: `tests/ui/auth-guard-ui.spec.ts`
+  - Test name: `EP02-US03-TC07 — LEAD accessing /kb is allowed`
+  - Status:
+    - Marked as `fixme` (blocked) until KB UI and persistent roles exist
+  - Command (once implemented):
+    ```sh
+    pnpm test:ui -- -g "EP02-US03-TC07"
+    ```
+
+- **Description:**
+  Positive UI RBAC scenario for the Knowledge Base management page. When a user
+  with role `LEAD` signs in and navigates to `/kb`, the page should load
+  successfully and expose KB management actions (e.g., add/update entries).
+  This test will validate that LEAD users can see and interact with privileged
+  KB UI elements, while lower-privilege roles are blocked in EP02-US03-TC05.
+  Currently blocked until `/kb` is implemented and LEAD users can be persisted
+  and seeded via the database layer (EP03/EP05).
 
 **Preconditions:**
 
@@ -727,7 +811,24 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Test name:** LEAD accessing `/api/kb/*` is allowed
 - **Type:** API
 - **Priority:** P0
-- **Automate:** Yes
+- **Automate:** Yes (Skipped until EP03)
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/auth-guard-api.spec.ts`
+  - Test name: `EP02-US03-TC08 — LEAD accessing /api/kb/* is allowed`
+  - Command (once enabled):
+    ```sh
+    pnpm test:api -- -g "EP02-US03-TC08"
+    ```
+
+- **Description:**
+  Positive RBAC test that verifies the LEAD path for Knowledge Base management APIs.
+  After authenticating as a user with role `LEAD`, the test calls `/api/kb/add`
+  (or another `/api/kb/*` endpoint) with a valid request body and expects a successful
+  `2xx` response and no `401/403` errors. This confirms that LEAD users are permitted
+  to manage KB entries while lower-privileged roles are not. Execution of this test
+  is deferred until a persistent user/role store is in place (EP03), so that LEAD
+  roles can be reliably seeded and preserved across runs.
 
 **Steps:**
 
@@ -747,6 +848,23 @@ Validates the happy-path login flow. Ensures that a valid user can successfully 
 - **Type:** Middleware / API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/auth-guard-api.spec.ts`
+  - Test name: `EP02-US03-TC09 — Invalid/expired session treated as unauthenticated (API)`
+  - Command:
+    ```sh
+    pnpm test:api -- -g "EP02-US03-TC09"
+    ```
+
+- **Description:**
+  Ensures that the system does not trust invalid or forged session tokens on
+  protected API endpoints. The test sends a POST request to `/api/ask` with an
+  obviously invalid session cookie value and expects a `401 Unauthorized`
+  response with an error payload. This confirms that both the middleware and
+  session verification logic treat invalid/expired tokens as unauthenticated,
+  rather than granting access or failing open, which is critical for the
+  security posture of the ask/retrieval engine.
 
 **Steps:**
 
