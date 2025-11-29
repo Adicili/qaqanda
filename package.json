@@ -13,12 +13,13 @@
     "qa:test:watch": "vitest",
     "test:unit": "vitest run --config vitest.unit.config.ts --reporter=verbose",
     "test:unit:watch": "vitest --config vitest.unit.config.ts",
+    "test:db": "vitest run --config vitest.db.config.ts --reporter=verbose",
     "test": "playwright test",
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "seed:users": "tsx scripts/seed-users.ts"
+    "seed:databricks": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/seedDatabricks.ts"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,css,md}": [

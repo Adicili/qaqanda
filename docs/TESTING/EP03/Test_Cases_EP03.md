@@ -338,7 +338,113 @@ Copy code
 
 ---
 
-# 🧩 US02 — KB Repository Layer
+## US02 — Schema Definition & Seed Verification (Integration)
+
+These scenarios validate that the Databricks schema exists, seed data is inserted, and that the Databricks SQL REST client (EP03-US01) can query the live database.
+
+---
+
+## EP03-US02-TC01 — Users seed contains admin@example.com and user@example.com
+
+Type: Integration  
+Priority: P0  
+Automated: Yes  
+Automation:
+
+- Framework: Vitest (DB integration config)
+- Spec file: `tests/integration/seedDatabricks.spec.ts`
+- Test name: `EP03-US01-TC01 — users seed contains admin@example.com and user@example.com`
+- Script: pnpm test:db
+
+### Preconditions
+
+- Databricks REST environment variables configured:
+  - DATABRICKS_HOST
+  - DATABRICKS_TOKEN
+- “users” table exists (schema applied)
+- Seed script executed at least once: scripts/seedDatabricks.ts
+
+### Steps
+
+1. Execute SQL:
+   SELECT COUNT(\*) AS count
+   FROM users
+   WHERE email IN (:leadEmail, :engineerEmail)
+
+2. Bind parameters:
+   leadEmail = "admin@example.com"  
+   engineerEmail = "user@example.com"
+
+3. Parse numeric result from the Databricks REST response.
+
+### Expected Result
+
+- HTTP 200
+- One row returned
+- count >= 2
+
+### Notes
+
+Confirms existence of baseline RBAC accounts in the real DB.
+EP02 authentication tests operate on persisted data, not mocks.
+
+---
+
+## EP03-US02-TC02 — Initial KB seed inserts at least two knowledge base documents
+
+Type: Integration  
+Priority: P1  
+Automated: Yes  
+Location: tests/integration/seedDatabricks.spec.ts
+
+### Preconditions
+
+- Databricks connectivity operational
+- “kb_docs” table exists
+- Seed script inserts initial KB docs:
+  kb-001
+  kb-002
+
+### Steps
+
+1. Execute SQL:
+   SELECT COUNT(\*) AS count
+   FROM kb_docs
+   WHERE id IN (:doc1, :doc2)
+
+2. Bind parameters:
+   doc1 = "kb-001"  
+   doc2 = "kb-002"
+
+3. Parse numeric result.
+
+### Expected Result
+
+- HTTP 200
+- count >= 2
+
+### Notes
+
+Confirms KB domain initialization.
+Provides consistent fixtures for:
+
+- EP03-US03 repository layer
+- EP04 ask/retrieval engine
+- EP05 knowledge UI
+
+---
+
+## Environment Safeguards
+
+These tests automatically skip if Databricks credentials are missing:
+
+Condition:
+ENV.DATABRICKS_HOST is non-empty AND  
+ENV.DATABRICKS_TOKEN is non-empty
+
+If false → entire describe block is skipped.
+
+This prevents CI failures when DB is unavailable.
 
 ---
 
@@ -347,6 +453,12 @@ Copy code
 **Type:** Unit / Component  
 **Priority:** P0  
 **Automate:** Yes
+Automation:
+
+- Framework: Vitest (DB integration config)
+- Spec file: `tests/integration/seedDatabricks.spec.ts`
+- Test name: `EP03-US01-TC02 — getArticleById returns typed KBArticle`
+- Script: pnpm test:db
 
 **Preconditions:**
 
@@ -371,7 +483,7 @@ Copy code
 
 ---
 
-### **EP03-US02-TC02 — listArticles returns sorted list**
+### **EP03-US02-TC03 — listArticles returns sorted list**
 
 **Type:** Unit / Component  
 **Priority:** P1  

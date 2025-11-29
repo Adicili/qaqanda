@@ -1,8 +1,5 @@
-import { execSync } from 'child_process';
-
 async function globalSetup() {
-  console.warn('🌱 Seeding test users...');
-  execSync('pnpm seed:users', { stdio: 'inherit' });
+  console.warn('⚠️ Skipping local user seed — using Databricks only');
 }
 
 export default globalSetup;

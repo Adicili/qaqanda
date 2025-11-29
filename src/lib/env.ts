@@ -6,11 +6,12 @@ const baseSchema = z.object({
 
   DATABRICKS_HOST: z.string().url().optional(),
   DATABRICKS_TOKEN: z.string().min(1).optional(),
+  DATABRICKS_WAREHOUSE_ID: z.string().min(1).optional(),
 
   OPENAI_API_KEY: z.string().min(1).optional(),
 
   PORT: z.coerce.number().int().positive().optional(),
-  BASE_URL: z.string().url().optional(),
+  BASE_URL: z.string().default('http://localhost:3000'),
   CI: z
     .union([z.string(), z.boolean(), z.number()])
     .transform((v) => {
@@ -36,6 +37,7 @@ if (env.NODE_ENV === 'production') {
   const missing: string[] = [];
   if (!env.DATABRICKS_HOST) missing.push('DATABRICKS_HOST');
   if (!env.DATABRICKS_TOKEN) missing.push('DATABRICKS_TOKEN');
+  if (!env.DATABRICKS_WAREHOUSE_ID) missing.push('DATABRICKS_WAREHOUSE_ID');
   if (missing.length) {
     throw new Error(`Missing required environment variables in production: ${missing.join(', ')}`);
   }
@@ -45,6 +47,7 @@ export const ENV = {
   NODE_ENV: env.NODE_ENV,
   DATABRICKS_HOST: env.DATABRICKS_HOST,
   DATABRICKS_TOKEN: env.DATABRICKS_TOKEN,
+  DATABRICKS_WAREHOUSE_ID: env.DATABRICKS_WAREHOUSE_ID,
   OPENAI_API_KEY: env.OPENAI_API_KEY,
   PORT: env.PORT,
   BASE_URL: env.BASE_URL,
