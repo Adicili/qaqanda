@@ -1,38 +1,33 @@
--- schema.sql
+-- 1) Catalog / schema (Unity Catalog)
+CREATE SCHEMA IF NOT EXISTS workspace.qaqanda;
 
--- Users table: logical app users (not necessarily Databricks identities)
-CREATE TABLE IF NOT EXISTS users (
-  id STRING,
-  email STRING,
-  password_hash STRING,
-  role STRING,
-  created_at TIMESTAMP DEFAULT current_timestamp()
+-- 2) USERS
+CREATE TABLE IF NOT EXISTS workspace.qaqanda.users (
+  id STRING NOT NULL,
+  email STRING NOT NULL,
+  password_hash STRING NOT NULL,
+  role STRING NOT NULL,
+  created_at TIMESTAMP NOT NULL
 );
 
--- Knowledge base documents
-CREATE TABLE IF NOT EXISTS kb_docs (
-  id STRING,
-  title STRING,
-  text STRING,
+-- 3) KB_DOCS
+CREATE TABLE IF NOT EXISTS workspace.qaqanda.kb_docs (
+  id STRING NOT NULL,
+  title STRING NOT NULL,
+  text STRING NOT NULL,
   tags ARRAY<STRING>,
-  updated_at TIMESTAMP DEFAULT current_timestamp()
+  updated_at TIMESTAMP NOT NULL
 );
 
--- Queries made by users against the KB / Ask engine
-CREATE TABLE IF NOT EXISTS queries (
-  id STRING,
-  user_id STRING,
-  question STRING,
-  latency_ms BIGINT,
-  created_at TIMESTAMP DEFAULT current_timestamp()
-);
-
--- Audit log for KB changes (who changed what)
-CREATE TABLE IF NOT EXISTS kb_audit (
-  id STRING,
-  doc_id STRING,
-  user_id STRING,
-  change_type STRING,
-  diff STRING,
-  created_at TIMESTAMP DEFAULT current_timestamp()
+-- 4) QUERIES - ANALITIKA / LOGGING
+CREATE TABLE IF NOT EXISTS workspace.qaqanda.queries (
+  id STRING NOT NULL,          -- npr. UUID v4
+  user_id STRING,              -- može NULL za anon / system
+  question STRING NOT NULL,
+  answer STRING,               -- ceo odgovor (ili skraćen)
+  model STRING,                -- npr. 'gpt-4.1-mini'
+  latency_ms BIGINT,           -- round-trip latency
+  tokens_prompt BIGINT,
+  tokens_completion BIGINT,
+  created_at TIMESTAMP NOT NULL
 );

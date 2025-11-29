@@ -1,7 +1,11 @@
 // vitest.db.config.ts
 import path from 'node:path';
 
+import dotenv from 'dotenv';
 import { defineConfig } from 'vitest/config';
+
+// Učitaj .env.local za DB testove
+dotenv.config({ path: '.env.local' });
 
 export default defineConfig({
   resolve: {
@@ -12,10 +16,5 @@ export default defineConfig({
   test: {
     include: ['tests/integration/**/*.spec.ts'],
     environment: 'node',
-    testTimeout: 30000,
-    env: {
-      BASE_URL: 'http://localhost:3000',
-      SESSION_SECRET: 'test_session_secret_at_least_32_chars_long!!',
-    },
   },
 });

@@ -1,24 +1,155 @@
+// src/lib/db.users.ts
+import crypto from 'crypto';
+
+import { ENV } from '@/lib/env';
 import { executeQuery } from '@/lib/databricksClient';
 
-export async function getUserByEmail(email: string) {
-  const rows = await executeQuery(
-    `SELECT id, email, password_hash, role FROM users WHERE email = :email`,
-    { email },
-  );
-  return rows[0] || null;
-}
+export type UserRole = 'ENGINEER' | 'LEAD';
 
-export async function createUser(user: {
+export type DbUser = {
   id: string;
   email: string;
   passwordHash: string;
-  role: 'ENGINEER' | 'LEAD';
-}) {
+  role: UserRole;
+  createdAt: Date;
+};
+
+const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
+
+/**
+ * -------------------------
+ * Databricks-backed storage
+ * -------------------------
+ */
+
+async function getUserByEmailDatabricks(email: string): Promise<DbUser | null> {
+  const rows = await executeQuery<{
+    id: string;
+    email: string;
+    password_hash: string;
+    role: string;
+    created_at: string;
+  }>(
+    `
+      SELECT
+        id,
+        email,
+        password_hash,
+        role,
+        created_at
+      FROM users
+      WHERE email = :email
+      LIMIT 1
+    `,
+    { email },
+  );
+
+  if (!rows.length) return null;
+
+  const row = rows[0];
+
+  return {
+    id: row.id,
+    email: row.email,
+    passwordHash: row.password_hash,
+    role: row.role as UserRole,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+async function createUserDatabricks(input: {
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+}): Promise<DbUser> {
+  const id = crypto.randomUUID();
+
   await executeQuery(
     `
-    INSERT INTO users(id, email, password_hash, role, created_at)
-    VALUES(:id, :email, :passwordHash, :role, current_timestamp())
+      INSERT INTO users (id, email, password_hash, role, created_at)
+      VALUES (:id, :email, :passwordHash, :role, current_timestamp())
     `,
-    user,
+    {
+      id,
+      email: input.email,
+      passwordHash: input.passwordHash,
+      role: input.role,
+    },
   );
+
+  const created = await getUserByEmailDatabricks(input.email);
+  if (!created) {
+    throw new Error('Failed to read back user after INSERT');
+  }
+
+  return created;
 }
+
+/**
+ * -------------------------
+ * In-memory fallback storage
+ * -------------------------
+ */
+
+const memoryUsers = new Map<string, DbUser>();
+let memoryIdCounter = 1;
+
+async function getUserByEmailMemory(email: string): Promise<DbUser | null> {
+  const target = email.toLowerCase();
+
+  for (const user of memoryUsers.values()) {
+    if (user.email.toLowerCase() === target) {
+      return user;
+    }
+  }
+
+  return null;
+}
+
+async function createUserMemory(input: {
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+}): Promise<DbUser> {
+  const user: DbUser = {
+    id: String(memoryIdCounter++),
+    email: input.email,
+    passwordHash: input.passwordHash,
+    role: input.role,
+    createdAt: new Date(),
+  };
+
+  memoryUsers.set(user.id, user);
+  return user;
+}
+
+/**
+ * -------------------------
+ * Public API
+ * -------------------------
+ */
+
+async function getUserByEmail(email: string): Promise<DbUser | null> {
+  if (hasDatabricksEnv) {
+    return getUserByEmailDatabricks(email);
+  }
+  return getUserByEmailMemory(email);
+}
+
+async function create(input: {
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+}): Promise<DbUser> {
+  if (hasDatabricksEnv) {
+    return createUserDatabricks(input);
+  }
+  return createUserMemory(input);
+}
+
+export const dbUsers = {
+  getUserByEmail,
+  create,
+};
+
+export { getUserByEmail, create };

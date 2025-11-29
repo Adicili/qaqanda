@@ -19,7 +19,7 @@
     "test:api": "playwright test --project=api",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "seed:databricks": "tsx scripts/seedDatabricks.ts"
+    "seed:databricks": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/seedDatabricks.ts"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,css,md}": [
