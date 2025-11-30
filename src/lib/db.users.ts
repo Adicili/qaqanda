@@ -14,6 +14,7 @@ export type DbUser = {
   createdAt: Date;
 };
 
+const SCHEMA = 'workspace.qaqanda';
 const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
 
 /**
@@ -37,7 +38,7 @@ async function getUserByEmailDatabricks(email: string): Promise<DbUser | null> {
         password_hash,
         role,
         created_at
-      FROM users
+      FROM ${SCHEMA}.users
       WHERE email = :email
       LIMIT 1
     `,
@@ -66,7 +67,7 @@ async function createUserDatabricks(input: {
 
   await executeQuery(
     `
-      INSERT INTO users (id, email, password_hash, role, created_at)
+      INSERT INTO ${SCHEMA}.users (id, email, password_hash, role, created_at)
       VALUES (:id, :email, :passwordHash, :role, current_timestamp())
     `,
     {
@@ -83,6 +84,35 @@ async function createUserDatabricks(input: {
   }
 
   return created;
+}
+
+async function listAllDatabricks(): Promise<DbUser[]> {
+  const rows = await executeQuery<{
+    id: string;
+    email: string;
+    password_hash: string;
+    role: string;
+    created_at: string;
+  }>(
+    `
+      SELECT
+        id,
+        email,
+        password_hash,
+        role,
+        created_at
+      FROM ${SCHEMA}.users
+      ORDER BY created_at DESC
+    `,
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    email: row.email,
+    passwordHash: row.password_hash,
+    role: row.role as UserRole,
+    createdAt: new Date(row.created_at),
+  }));
 }
 
 /**
@@ -123,6 +153,12 @@ async function createUserMemory(input: {
   return user;
 }
 
+async function listAllMemory(): Promise<DbUser[]> {
+  return Array.from(memoryUsers.values()).sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+  );
+}
+
 /**
  * -------------------------
  * Public API
@@ -147,9 +183,17 @@ async function create(input: {
   return createUserMemory(input);
 }
 
+async function listAll(): Promise<DbUser[]> {
+  if (hasDatabricksEnv) {
+    return listAllDatabricks();
+  }
+  return listAllMemory();
+}
+
 export const dbUsers = {
   getUserByEmail,
   create,
+  listAll,
 };
 
-export { getUserByEmail, create };
+export { getUserByEmail, create, listAll };
