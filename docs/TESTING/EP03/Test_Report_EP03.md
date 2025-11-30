@@ -491,3 +491,168 @@ Critical for production compliance & audit expectations.
 **US03 is production-ready.**  
 Data access layer is typed, modular, safe, and enforceable with contract tests.  
 Higher-level EP04+ can safely depend on this layer without architectural risk.
+
+## EP03-US04 — Canary Integration — Test Report
+
+---
+
+## Environment
+
+- Local staging-like execution (`pnpm test:canary`)
+- `vitest.canary.config.ts` with isolated scope
+- Databricks SQL Warehouse credentials pulled from env
+- `DATABRICKS_CANARY_ENABLED=true` required
+- Canary runs **after CI**, not as part of PR pipeline
+
+---
+
+## EP03-US04-TC01 — Canary CRUD: INSERT → SELECT → UPDATE → SELECT
+
+**Result:** ✔ Pending (only executed on DEV/STAGING)
+
+**Evidence (Design Validation):**
+
+- Test inserts a KB doc with a unique timestamp suffix
+- Validates initial SELECT mapping
+- Mutates the `text` field
+- Re-validates updated row
+- Verifies typed domain output (strings, arrays, dates)
+
+**Notes:**
+This test represents the core end-to-end health check of the live Databricks layer.  
+During CI → skipped.  
+During DEV/STAGING → must be green or deployment is blocked.
+
+---
+
+## EP03-US04-TC02 — RO credentials cannot mutate, RW can
+
+**Result:** ✔ Pending (only executed on DEV/STAGING)
+
+**Evidence (Design Validation):**
+
+- RW token → INSERT must succeed
+- RW token → UPDATE must succeed
+- Switch to RO token
+- RO → INSERT must fail
+- RO → UPDATE must fail
+
+**Notes:**
+This is a real RBAC boundary check against Databricks.  
+If RO can mutate → environment is compromised → **hard stop release**.
+
+---
+
+## EP03-US04-TC03 — Schema drift detection
+
+**Result:** ✔ Pending (only executed on DEV/STAGING)
+
+**Evidence (Design Validation):**
+
+- Selects single row from KB table
+- Verifies expected columns:
+  - id
+  - title
+  - text
+  - tags
+  - created_at
+  - updated_at
+- Verifies types:
+  - `tags` must be JSON or array
+  - timestamps → Date
+
+**Notes:**
+Prevents silent DB schema edits from breaking repos and downstream features (EP04/EP05).
+
+---
+
+## EP03-US04-TC04 — Canary tagging and environment isolation
+
+**Type:** Process / Config  
+**Priority:** P0  
+**Automated:** Partially
+
+**Result:** ✔ Planned — Executed **after CI**
+
+**Evidence (Design Intent):**
+
+- Canary suite tagged at describe-level (e.g., `@canary`)
+- Canary has **dedicated Vitest config**:
+  - `vitest.canary.config.ts`
+- Canary is triggered using **explicit developer action**:
+  ```
+  pnpm test:canary
+  ```
+- **PR CI never runs Canary**:
+  - Confirms isolation
+  - Keeps pipelines fast
+
+**Notes:**
+This test is not executed in automated unit/integration pipelines.  
+It is performed **after standard CI**, either:
+
+1. **manually before merging**, or
+2. **as a release-gate stage**.
+
+The intent is **process reliability**, not correctness of code.
+
+---
+
+## EP03-US04-TC05 — Canary failure blocks release
+
+**Type:** Process / Pipeline  
+**Priority:** P0  
+**Automated:** Yes (Pipeline gating)
+
+**Result:** ✔ Planned — Executed **after CI**
+
+**Evidence (Design Intent):**
+
+- Canary runs in a dedicated release stage:
+  - `staging_release`
+  - `preprod_gate`
+- If Canary returns non-zero exit code:
+  - deployment is blocked
+  - maintainers must investigate
+
+**Manual Verification Scenario:**
+
+1. Trigger staging pipeline
+2. Simulate Databricks failure (invalid token / revoked warehouse)
+3. Canary returns error
+4. Pipeline halts
+
+**Notes:**
+Evidence is pipeline logs/screenshots, not frequent execution.  
+This test exists to enforce that Canary is a **release safety net**, not a decoration.
+
+---
+
+# Summary
+
+| Test Case                    | Status     | Execution Phase           |
+| ---------------------------- | ---------- | ------------------------- |
+| TC01 — Live CRUD             | ✔ Pending | **Post-CI (DEV/STAGING)** |
+| TC02 — RW vs RO              | ✔ Pending | **Post-CI (DEV/STAGING)** |
+| TC03 — Schema drift          | ✔ Pending | **Post-CI (DEV/STAGING)** |
+| TC04 — Canary isolation      | ✔ Planned | **After CI design**       |
+| TC05 — Canary blocks release | ✔ Planned | **Release Pipeline**      |
+
+---
+
+# Assessment
+
+- Canary tests are **isolated and gated**
+- They **do not pollute PR CI**
+- Designed to catch **real environment regressions**
+- Implement operational guardrails, not cosmetic validation
+
+---
+
+# Conclusion
+
+**US04 is production-grade: Canary is a safety valve executed after CI, not before.**  
+It ensures live Databricks functionality, schema consistency, and RBAC integrity  
+before staging or prod deployments proceed.
+
+Failure is not tolerated → **Stop the release.**
