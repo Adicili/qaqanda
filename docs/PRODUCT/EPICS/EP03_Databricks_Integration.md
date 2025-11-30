@@ -149,6 +149,53 @@ tests/unit/db.queries.spec.ts
 
 ---
 
+## EP03-US04 — Canary Integration (2 pts)
+
+### Description
+
+As a QA engineer, I need a real Databricks SQL Warehouse connectivity test that performs a full CRUD cycle, validates schema consistency, and verifies role-based database access, so we can ensure that the typed repository layer is reliable before higher features depend on it.
+
+### Acceptance Criteria
+
+- Executes **only with valid DEV/STAGING Databricks credentials**
+- Performs **end-to-end round trip** against the real warehouse:
+  1. INSERT KB article
+  2. SELECT inserted article
+  3. UPDATE article
+  4. SELECT updated result
+- Validates **column names and data types**
+- Verifies **permission boundaries**:
+  - **Read-only credentials → must fail** on INSERT/UPDATE
+  - **Read-write credentials → must succeed**
+- **Not executed on PR pipelines** (tagged test)
+- Failure must block release until resolved
+
+### Tasks
+
+- **EP03-US04-T01 — Implement Canary CRUD test**
+  - Create → Read → Update → Read sequence
+  - Assert title/text/tags integrity
+  - Assert returned schema and object mapping
+
+- **EP03-US04-T02 — Add Permission Validation**
+  - Read-only credentials → expect failure on mutations
+  - Read-write credentials → expect success
+
+- **EP03-US04-T03 — Implement Schema Drift Detection**
+  - Validate column list and data types
+  - Fail immediately if unexpected fields or types appear
+
+- **EP03-US04-T04 — Configure Canary Test Isolation**
+  - Tag test (e.g. `@canary`)
+  - Exclude from CI by default
+  - Document environment requirements
+
+### Deliverables
+
+tests/integration/databricks.canary.spec.ts
+README_Canary.md (optional)
+.env.example (DEV/STAGING variables only)
+
 ## ✅ EP03 Epic Done When
 
 - Databricks connection tested successfully
@@ -156,3 +203,8 @@ tests/unit/db.queries.spec.ts
 - Access layer implemented and covered by tests
 - No SQL injection risk or unescaped parameters
 - Data layer supports all auth and KB operations
+- Repository functions return typed, validated results (runtime & compile-time)
+- Unit tests for SQL client and repositories pass consistently
+- Canary test validates real round-trip CRUD and schema stability
+- Permission boundaries verified (RO vs RW credentials)
+- No sensitive credentials logged in test or runtime output
