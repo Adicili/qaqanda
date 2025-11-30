@@ -12,6 +12,7 @@ vi.mock('@/lib/env', () => ({
   ENV: {
     DATABRICKS_HOST: 'https://dummy-databricks.example.com',
     DATABRICKS_TOKEN: 'test-token',
+    DATABRICKS_WAREHOUSE_ID: 'test-warehouse-id',
   },
 }));
 
@@ -175,10 +176,12 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   it('EP03-US01-TC09 — fails fast when ENV is missing Databricks config', async () => {
     const prevHost = (ENV as any).DATABRICKS_HOST;
     const prevToken = (ENV as any).DATABRICKS_TOKEN;
+    const prevWarehouse = (ENV as any).DATABRICKS_WAREHOUSE_ID;
 
     // Simulate missing config
     (ENV as any).DATABRICKS_HOST = undefined;
     (ENV as any).DATABRICKS_TOKEN = undefined;
+    (ENV as any).DATABRICKS_WAREHOUSE_ID = undefined;
 
     await expect(executeQuery('SELECT 1')).rejects.toBeInstanceOf(DatabricksClientError);
 
@@ -188,5 +191,6 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
     // restore original values so other tests are not affected
     (ENV as any).DATABRICKS_HOST = prevHost;
     (ENV as any).DATABRICKS_TOKEN = prevToken;
+    (ENV as any).DATABRICKS_WAREHOUSE_ID = prevWarehouse;
   });
 });
