@@ -1,11 +1,11 @@
 # QAQandA App
 
-Internal QA & Knowledge Management tool built with **Next.js (App Router)**, **TypeScript**, **TailwindCSS**, and **Playwright**.  
-Project adheres to EP01 setup and follows strict linting, testing, and CI/CD standards.
+Internal QA & Knowledge Management tool built with **Next.js (App Router)**, **TypeScript**, **Databricks SQL Warehouse**, **Vitest**, and **Playwright**.  
+Project follows strict QA-driven development (EP01–EP03) and is structured for CI/CD expansion (EP08).
 
 ---
 
-## 🧰 Prerequisites
+# 🧰 Prerequisites
 
 | Tool       | Version   |
 | ---------- | --------- |
@@ -14,32 +14,36 @@ Project adheres to EP01 setup and follows strict linting, testing, and CI/CD sta
 | TypeScript | >= 5.x    |
 | Playwright | >= 1.48.x |
 
-> Check your setup:
->
-> ```bash
-> node -v
-> pnpm -v
-> ```
+Verify:
+
+```bash
+node -v
+pnpm -v
+```
 
 ---
 
-## ⚙️ Setup & Run
+# ⚙️ Setup & Run
 
-### 1. Install dependencies
+## 1. Install dependencies
 
 ```bash
 pnpm install
 ```
 
-### 2. Run in development mode
+## 2. Local Development (Databricks optional)
 
 ```bash
 pnpm dev
 ```
 
-App starts on [http://localhost:3000](http://localhost:3000).
+App starts at:
 
-### 3. Build for production
+> http://localhost:3000
+
+If Databricks env vars aren’t provided → repositories fallback to **in-memory storage**.
+
+## 3. Production build
 
 ```bash
 pnpm build && pnpm start
@@ -47,139 +51,200 @@ pnpm build && pnpm start
 
 ---
 
-## 🧪 Testing
+# 🧪 Testing
 
-### Run Playwright tests
+## Unit tests (fast)
+
+Database repositories and Databricks client API wrapper:
+
+```bash
+pnpm test:unit
+```
+
+Uses Vitest, mocks Databricks API, no external dependencies.
+
+---
+
+## E2E / UI tests (Playwright)
 
 ```bash
 pnpm playwright test
 ```
 
-### Run TypeScript type check
+---
+
+## Canary DB tests (real Databricks)
+
+**⚠️ Disabled by default. Runs only with valid DEV/STAGING credentials.**
 
 ```bash
-pnpm tsc --noEmit
+pnpm test:canary
 ```
 
-### Run ESLint & Prettier
-
-```bash
-pnpm lint
-pnpm format
-```
-
-Pre-commit hook enforces lint + format automatically.
+- Executes against actual SQL Warehouse
+- Inserts/updates KB documents
+- Validates schema, permissions
+- Blocks release when failing
 
 ---
 
-## ✔️ Quality Gates (EP02)
+# ✔️ EP02 — Quality Gates
 
-This project follows strict **EP02 Quality Criteria**.  
-Every commit must pass the following automated checks:
+Every commit must pass:
 
-### **1. ESLint (US02-TC01)**
+- ESLint
+- Prettier
+- TypeScript strict mode
+- Playwright smoke
+- Folder structure
+- Env schema validation
 
-```bash
-pnpm lint
-```
+## Required scripts
 
-### **2. Prettier Formatting (US02-TC02)**
-
-```bash
-pnpm format
-pnpm format:check
-```
-
-### **3. Pre-commit Enforcement (US02-TC03)**
-
-Husky + lint-staged ensure:
-
-- No lint violations
-- No formatting violations
-- Only clean staged files are allowed to commit
-
-### **4. Required NPM Scripts (US02-TC04)**
-
-Mandatory project quality scripts:
-
-| Script              | Purpose               |
-| ------------------- | --------------------- |
-| `pnpm lint`         | Lint full codebase    |
-| `pnpm format`       | Format code           |
-| `pnpm test`         | Run Playwright suite  |
-| `pnpm qa:test`      | Run QA quality checks |
-| `pnpm format:check` | Check formatting only |
-
-### **5. QA Meta Test Suite**
-
-```bash
-pnpm qa:test
-```
-
-Validates:
-
-- Env schema
-- No forbidden `process.env` usage
-- Lint compliance
-- Prettier compliance
-- Pre-commit behavior
-- Playwright config validity
-- Required folder structure
-- Smoke test must pass
+| Script              | Purpose                        |
+| ------------------- | ------------------------------ |
+| `pnpm lint`         | ESLint                         |
+| `pnpm format`       | Format code                    |
+| `pnpm format:check` | Formatting validation only     |
+| `pnpm test:unit`    | Unit + contract tests          |
+| `pnpm playwright`   | UI/E2E                         |
+| `pnpm qa:test`      | Meta suite for EP02 compliance |
 
 ---
 
-## 🧱 Project Structure
+# 🧱 Project Structure
 
 ```
-/app       → Next.js App Router
-/lib       → Utilities (env, session, db wrappers)
-/schemas   → Zod schemas & DTO definitions
-/tests     → Playwright tests
-  /ui      → UI smoke & regression
-  /api     → API & integration tests
-  /pages   → Page Object Models (POM)
-/public    → Static assets
+/app                   → Next.js App Router
+/lib                   → Core utilities
+  ├ databricksClient   → SQL wrapper (EP03)
+  ├ db.users.ts        → Users repository (CRUD)
+  ├ db.kb.ts           → Knowledge Base repository
+  ├ db.queries.ts      → Query Log repository
+/schemas               → DTOs, Zod validation
+/tests
+  /unit                → Repository + client + logging tests
+  /integration         → Canary DB tests (EP03-US04)
+  /ui                  → Playwright
+  /api                 → API controller tests (future EP04)
 ```
 
 ---
 
-## 🎨 Styling
+# 🧩 Databricks Integration (EP03)
 
-TailwindCSS (utility-first).  
-Edit styles in `app/globals.css` and configure paths in `tailwind.config.js`.
+Project integrates a **typed Databricks Client**:
 
----
+- SQL wrapper:
+  - named parameters (`:email`, `:id`)
+  - secure escaping
+  - timeout & retry strategy
+- Inline JSON result parsing
+- Mapping array-of-arrays → typed records
 
-## 🧩 Tooling
+## Safe Querying
 
-| Tool        | Purpose                                    |
-| ----------- | ------------------------------------------ |
-| ESLint      | Code linting                               |
-| Prettier    | Formatting                                 |
-| Husky       | Git hooks (pre-commit)                     |
-| Lint-Staged | Runs lint on staged files                  |
-| Playwright  | End-to-end testing                         |
-| CI/CD       | GitHub Actions integration planned in EP08 |
-
----
-
-## 🧭 Runbook
-
-| Command             | Description          |
-| ------------------- | -------------------- |
-| `pnpm install`      | Install dependencies |
-| `pnpm dev`          | Run local dev server |
-| `pnpm build`        | Production build     |
-| `pnpm lint`         | Run ESLint           |
-| `pnpm format`       | Format code          |
-| `pnpm test`         | Run Playwright suite |
-| `pnpm tsc --noEmit` | Type check only      |
+- `executeQuery(sql, params)`
+- No raw string interpolation
+- No unescaped input
+- No sensitive logs
 
 ---
 
-## 🧾 Notes
+# 🗄️ Database Repositories (EP03-US03)
 
-- Env vars live in `.env.local` (ignored by Git).
-- Git hooks enforce quality on every commit.
-- Project is governed by EP01 + EP02 quality standards.
+Each domain has its own module:
+
+- `db.users.ts`
+  - `getUserByEmail(email)`
+  - `create(user)`
+  - `listAll()`
+
+- `db.kb.ts`
+  - `getById(id)`
+  - `addDoc(title, text, tags)`
+  - `updateDoc(id, newText)`
+  - `listAll()`
+
+- `db.queries.ts`
+  - `insertQuery(userId, question, latency)`
+  - `getRecentByUser(userId)`
+
+**No repository talks to Databricks directly — everything goes through `databricksClient`.**
+
+Fallback:
+
+- When ENV is not configured → in-memory storage
+
+---
+
+# 🧪 EP03 — Tests
+
+## Unit / Contract coverage
+
+- Repository CRUD
+- Parameterized SQL usage
+- Databricks wrapper behaviors
+- Retry / Timeout / HTTP errors
+- Mapping result schema
+- Sensitive logging check
+
+Everything mocks the Databricks network and ENV.
+
+---
+
+# 🛡️ Canary Testing (EP03-US04)
+
+Canary suite hits **real SQL Warehouse**:
+
+- Insert KB doc
+- Read back
+- Update KB doc
+- Read updated
+- Validate column types
+- Validate permission boundaries
+  - READ-ONLY → fails on INSERT/UPDATE
+  - READ-WRITE → succeeds
+
+**Skipped on PR CI. Run manually or scheduled.**
+
+---
+
+# 🔐 Environment
+
+## `.env.local` or `.env.development`
+
+```
+SESSION_SECRET="---"
+DATABRICKS_HOST="https://XXX.databricks.cloud"
+DATABRICKS_TOKEN="dapiXXXX"
+DATABRICKS_WAREHOUSE_ID="XXXX"
+```
+
+If missing → repositories switch to in-memory mode.
+
+> No credentials in repo. No logs of SQL or secrets.
+
+---
+
+# 💡 Runbook
+
+| Command             | Description              |
+| ------------------- | ------------------------ |
+| `pnpm dev`          | Local dev server         |
+| `pnpm build`        | Production build         |
+| `pnpm test:unit`    | Unit + repositories      |
+| `pnpm playwright`   | UI regression suite      |
+| `pnpm test:canary`  | 🔥 LIVE Databricks tests |
+| `pnpm lint`         | ESLint                   |
+| `pnpm format`       | Format code              |
+| `pnpm tsc --noEmit` | Strict typing            |
+
+---
+
+# 📘 Notes
+
+- Code is QA-led, not “feature led”.
+- Databricks access layer is fully typed and segregated.
+- Canary tests block unsafe releases.
+- EP08 will integrate CI/CD pipelines with gated stages.
