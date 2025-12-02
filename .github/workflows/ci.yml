@@ -1,142 +1,136 @@
-# This sets the human-readable name of the workflow in GitHub Actions UI
+# This sets the human-readable name of the workflow in the GitHub Actions UI
 name: CI - Build & Test
 
-# This section defines which GitHub events will trigger this workflow
+# This section defines which events will trigger the workflow
 on:
-  # This event runs the workflow for every pull request opened/updated
+  # This event runs the workflow on every pull request
   pull_request:
-    # This nested section lets you control which branches PRs target
-    # Here we let it run for any PR targeting the repository (no branch filter)
+    # You could restrict branches here if needed (e.g. only PRs into main)
     # branches:
     #   - main
 
-  # This event runs the workflow when code is pushed directly to branches
+  # This event runs the workflow on direct pushes to branches
   push:
-    # This limits the push trigger to the main branch only
+    # Here we limit the push trigger to only the main branch
     branches:
-      # Name of the branch that triggers the workflow on push
+      # Name of the branch for push events
       - main
 
-# This top-level section defines all jobs that belong to this workflow
+# This section defines all jobs in this workflow
 jobs:
-  # This is the first job, responsible for basic build and type validation
+  # First job: responsible for basic build and type validation
   build:
-    # This defines which virtual machine image to use (Ubuntu Linux)
+    # Use the Ubuntu Linux runner image
     runs-on: ubuntu-latest
 
-    # This section lists all steps that will run inside the "build" job
+    # Steps executed inside the "build" job
     steps:
-      # This step checks out (clones) the repository code into the runner workspace
+      # Step: checkout the repository code to the runner
       - name: Checkout repository
-        # This uses the official GitHub Action for checking out the repo
+        # Use the official GitHub Action to checkout the code
         uses: actions/checkout@v4
 
-      # This step configures Node.js on the runner
+      # Step: configure Node.js runtime
       - name: Setup Node.js
-        # This uses the official Action to install and configure Node
+        # Use the official Node setup action
         uses: actions/setup-node@v4
-        # The "with" block passes configuration options into the action
         with:
-          # This sets the Node.js version to 20, matching your project requirement
+          # Set Node.js version to 20 (matches your project requirements)
           node-version: 20
-          # This enables built-in caching for pnpm dependencies to speed up installs
-          cache: pnpm
+          # IMPORTANT: we removed "cache: pnpm" here because pnpm is not installed yet
 
-      # This step installs pnpm (the package manager you use in this project)
+      # Step: install pnpm on the runner
       - name: Setup pnpm
-        # This uses the official pnpm setup action
+        # Use the official pnpm setup action
         uses: pnpm/action-setup@v2
         with:
-          # This sets the pnpm version; you can keep it in sync with your local env
+          # Use pnpm version 8 (you can update later if needed)
           version: 8
+          # We don't auto-run install here, we keep explicit "pnpm install" below
 
-      # This step installs all project dependencies (from package.json)
+      # Step: install all project dependencies (node_modules)
       - name: Install dependencies
-        # This runs "pnpm install" in the repository root
+        # Use pnpm to install dependencies defined in package.json
         run: pnpm install
 
-      # This step runs a TypeScript type-check to ensure the code compiles
+      # Step: run TypeScript type-check to validate the build
       - name: Type check (build validation)
-        # This uses "tsc --noEmit" so TypeScript only checks types without emitting JS
+        # Use tsc in noEmit mode so it only checks types without generating JS
         run: pnpm tsc --noEmit
 
-  # This is the second job, responsible for linting and running all automated tests
+  # Second job: responsible for linting and running all tests
   test:
-    # This declares that the "test" job depends on successful completion of "build"
+    # Declare that the "test" job depends on a successful "build" job
     needs: build
-    # This tells GitHub to run the "test" job on an Ubuntu Linux runner
+    # Use the same Ubuntu Linux runner for the test job
     runs-on: ubuntu-latest
 
-    # This section lists all steps in the "test" job
+    # Steps executed inside the "test" job
     steps:
-      # This step checks out the repository again (each job runs in a fresh VM)
+      # Step: checkout the repository again (each job runs in a fresh environment)
       - name: Checkout repository
-        # We reuse the same official checkout action
+        # Use the official checkout action
         uses: actions/checkout@v4
 
-      # This step sets up Node.js for the test job
+      # Step: configure Node.js for the test job
       - name: Setup Node.js
-        # We reuse the same Node setup action as in the build job
+        # Use the same setup-node action
         uses: actions/setup-node@v4
         with:
-          # Same Node version to keep behavior consistent across jobs
+          # Same Node.js version as in the build job for consistency
           node-version: 20
-          # Enable pnpm caching here as well to speed up dependency installs
-          cache: pnpm
+          # Again, no "cache: pnpm" here, to avoid calling pnpm before it exists
 
-      # This step installs pnpm so we can run pnpm commands in the test job
+      # Step: install pnpm for the test job
       - name: Setup pnpm
-        # Reuse the pnpm setup action
+        # Use pnpm setup action again
         uses: pnpm/action-setup@v2
         with:
-          # Same pnpm version as in the build job
+          # Same pnpm version to keep behavior consistent
           version: 8
 
-      # This step installs dependencies again for the test job
-      # (thanks to caching, this usually reuses the already downloaded packages)
+      # Step: install project dependencies for the test job
       - name: Install dependencies
-        # Run "pnpm install" to ensure node_modules are present for tests
+        # Run pnpm install again (cache from previous steps may still help on the runner)
         run: pnpm install
 
-      # This step runs ESLint to check code style and common errors
+      # Step: run ESLint to catch style and code quality issues
       - name: Run ESLint (lint)
-        # Uses your existing "lint" script from package.json: "pnpm lint"
+        # Run your lint script defined in package.json
         run: pnpm lint
 
-      # This step runs a full TypeScript type-check in the test job as well
-      # This ensures tests don’t run on code with type errors
+      # Step: run TypeScript type-check in the test job as part of the quality gate
       - name: Run TypeScript type-check
-        # Uses the same tsc command as in the build job
+        # Use the same tsc noEmit command
         run: pnpm tsc --noEmit
 
-      # This step runs your unit and contract tests (Vitest based)
+      # Step: run unit and contract tests (Vitest)
       - name: Run unit tests
-        # Uses your "test:unit" script from package.json
+        # Use your existing "test:unit" script
         run: pnpm test:unit
 
-      # This step installs Playwright browsers required to run UI/API tests in CI
+      # Step: install Playwright browsers (Chromium/Firefox/WebKit) on the runner
       - name: Install Playwright browsers
-        # "npx playwright install --with-deps" installs browsers and system dependencies
+        # Use Playwright CLI to download browsers and OS dependencies
         run: npx playwright install --with-deps
 
-      # This step executes all Playwright projects (UI and API) in headless mode
+      # Step: run Playwright tests (UI + API projects as configured in playwright.config.ts)
       - name: Run Playwright tests
-        # Uses your "test" script from package.json which runs "playwright test"
+        # Use your "test" script from package.json which maps to "playwright test"
         run: pnpm test
 
-      # This step uploads the Playwright HTML report if any previous step failed
+      # Step: upload Playwright HTML report if any previous step in this job failed
       - name: Upload Playwright report on failure
-        # This condition ensures the step runs only if the job has failed
+        # This condition ensures the step only runs when the job has failed
         if: failure()
-        # This uses GitHub's official action to upload files as workflow artifacts
+        # Use GitHub's artifact upload action
         uses: actions/upload-artifact@v4
         with:
-          # This sets the name of the artifact as it will appear in the Actions UI
+          # Name displayed for the artifact in the GitHub Actions UI
           name: playwright-report
-          # This is the path to the Playwright report folder generated by the tests
+          # Path to the Playwright report folder generated by the reporter config
           path: playwright-report
-          # If no files are found (for example if tests failed before report generation),
-          # this option prevents the upload step from causing a new failure
+          # If the folder is missing, ignore rather than failing this step
           if-no-files-found: ignore
-          # This defines how many days the artifact is kept and downloadable
+          # Number of days artifacts will be retained and available for download
           retention-days: 7
