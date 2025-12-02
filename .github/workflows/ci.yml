@@ -112,10 +112,15 @@ jobs:
         # Playwright CLI command to install browsers and OS dependencies
         run: npx playwright install --with-deps
 
-      # Step: run Playwright tests (UI and API projects)
-      - name: Run Playwright tests
+      # Step: run Playwright tests (API projects)
+      - name: Run Playwright API tests
         # Uses your "test" script which runs "playwright test"
-        run: pnpm test
+        run: pnpm test:api
+      
+      # Step: run Playwright tests (UI projects)
+      - name: Run Playwright UI tests
+        # Uses your "test" script which runs "playwright test"
+        run: pnpm test:ui
 
       # Step: upload Playwright HTML report if any previous step failed
       - name: Upload Playwright report on failure
