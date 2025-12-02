@@ -1,0 +1,142 @@
+# This sets the human-readable name of the workflow in GitHub Actions UI
+name: CI - Build & Test
+
+# This section defines which GitHub events will trigger this workflow
+on:
+  # This event runs the workflow for every pull request opened/updated
+  pull_request:
+    # This nested section lets you control which branches PRs target
+    # Here we let it run for any PR targeting the repository (no branch filter)
+    # branches:
+    #   - main
+
+  # This event runs the workflow when code is pushed directly to branches
+  push:
+    # This limits the push trigger to the main branch only
+    branches:
+      # Name of the branch that triggers the workflow on push
+      - main
+
+# This top-level section defines all jobs that belong to this workflow
+jobs:
+  # This is the first job, responsible for basic build and type validation
+  build:
+    # This defines which virtual machine image to use (Ubuntu Linux)
+    runs-on: ubuntu-latest
+
+    # This section lists all steps that will run inside the "build" job
+    steps:
+      # This step checks out (clones) the repository code into the runner workspace
+      - name: Checkout repository
+        # This uses the official GitHub Action for checking out the repo
+        uses: actions/checkout@v4
+
+      # This step configures Node.js on the runner
+      - name: Setup Node.js
+        # This uses the official Action to install and configure Node
+        uses: actions/setup-node@v4
+        # The "with" block passes configuration options into the action
+        with:
+          # This sets the Node.js version to 20, matching your project requirement
+          node-version: 20
+          # This enables built-in caching for pnpm dependencies to speed up installs
+          cache: pnpm
+
+      # This step installs pnpm (the package manager you use in this project)
+      - name: Setup pnpm
+        # This uses the official pnpm setup action
+        uses: pnpm/action-setup@v2
+        with:
+          # This sets the pnpm version; you can keep it in sync with your local env
+          version: 8
+
+      # This step installs all project dependencies (from package.json)
+      - name: Install dependencies
+        # This runs "pnpm install" in the repository root
+        run: pnpm install
+
+      # This step runs a TypeScript type-check to ensure the code compiles
+      - name: Type check (build validation)
+        # This uses "tsc --noEmit" so TypeScript only checks types without emitting JS
+        run: pnpm tsc --noEmit
+
+  # This is the second job, responsible for linting and running all automated tests
+  test:
+    # This declares that the "test" job depends on successful completion of "build"
+    needs: build
+    # This tells GitHub to run the "test" job on an Ubuntu Linux runner
+    runs-on: ubuntu-latest
+
+    # This section lists all steps in the "test" job
+    steps:
+      # This step checks out the repository again (each job runs in a fresh VM)
+      - name: Checkout repository
+        # We reuse the same official checkout action
+        uses: actions/checkout@v4
+
+      # This step sets up Node.js for the test job
+      - name: Setup Node.js
+        # We reuse the same Node setup action as in the build job
+        uses: actions/setup-node@v4
+        with:
+          # Same Node version to keep behavior consistent across jobs
+          node-version: 20
+          # Enable pnpm caching here as well to speed up dependency installs
+          cache: pnpm
+
+      # This step installs pnpm so we can run pnpm commands in the test job
+      - name: Setup pnpm
+        # Reuse the pnpm setup action
+        uses: pnpm/action-setup@v2
+        with:
+          # Same pnpm version as in the build job
+          version: 8
+
+      # This step installs dependencies again for the test job
+      # (thanks to caching, this usually reuses the already downloaded packages)
+      - name: Install dependencies
+        # Run "pnpm install" to ensure node_modules are present for tests
+        run: pnpm install
+
+      # This step runs ESLint to check code style and common errors
+      - name: Run ESLint (lint)
+        # Uses your existing "lint" script from package.json: "pnpm lint"
+        run: pnpm lint
+
+      # This step runs a full TypeScript type-check in the test job as well
+      # This ensures tests don’t run on code with type errors
+      - name: Run TypeScript type-check
+        # Uses the same tsc command as in the build job
+        run: pnpm tsc --noEmit
+
+      # This step runs your unit and contract tests (Vitest based)
+      - name: Run unit tests
+        # Uses your "test:unit" script from package.json
+        run: pnpm test:unit
+
+      # This step installs Playwright browsers required to run UI/API tests in CI
+      - name: Install Playwright browsers
+        # "npx playwright install --with-deps" installs browsers and system dependencies
+        run: npx playwright install --with-deps
+
+      # This step executes all Playwright projects (UI and API) in headless mode
+      - name: Run Playwright tests
+        # Uses your "test" script from package.json which runs "playwright test"
+        run: pnpm test
+
+      # This step uploads the Playwright HTML report if any previous step failed
+      - name: Upload Playwright report on failure
+        # This condition ensures the step runs only if the job has failed
+        if: failure()
+        # This uses GitHub's official action to upload files as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          # This sets the name of the artifact as it will appear in the Actions UI
+          name: playwright-report
+          # This is the path to the Playwright report folder generated by the tests
+          path: playwright-report
+          # If no files are found (for example if tests failed before report generation),
+          # this option prevents the upload step from causing a new failure
+          if-no-files-found: ignore
+          # This defines how many days the artifact is kept and downloadable
+          retention-days: 7
