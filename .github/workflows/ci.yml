@@ -116,7 +116,7 @@ jobs:
       - name: Run Playwright API tests
         # Uses your "test" script which runs "playwright test"
         run: pnpm test:api
-      
+
       # Step: run Playwright tests (UI projects)
       - name: Run Playwright UI tests
         # Uses your "test" script which runs "playwright test"
