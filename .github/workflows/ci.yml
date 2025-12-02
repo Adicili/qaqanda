@@ -102,6 +102,11 @@ jobs:
         # Uses your "test:unit" script
         run: pnpm test:unit
 
+      # Step: run quality/meta test suite (env, lint, scripts, hooks, etc.)
+      - name: Run QA meta tests
+        # Uses your "qa:test" script which targets tests/quality/*
+        run: pnpm qa:test
+
       # Step: install Playwright browsers on the runner
       - name: Install Playwright browsers
         # Playwright CLI command to install browsers and OS dependencies
