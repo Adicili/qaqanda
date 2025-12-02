@@ -6,22 +6,22 @@ on:
   # This event triggers on every Pull Request
   pull_request:
 
-  # This event triggers on pushes to branches
+  # This event triggers on direct pushes to branches
   push:
-    # We restrict push triggers to the main branch
+    # We restrict push triggers to the main branch only
     branches:
       - main
 
-# This section defines the jobs that will run in this workflow
+# This section defines the jobs for this workflow
 jobs:
   # First job: build and type-check
   build:
-    # Use an Ubuntu Linux runner image
+    # Use an Ubuntu Linux runner
     runs-on: ubuntu-latest
 
-    # Steps that will run in the build job
+    # Steps for the build job
     steps:
-      # Step: checkout the repo code to the runner file system
+      # Step: checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -36,7 +36,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          # Use pnpm version 8 (matches your tooling)
+          # Use pnpm version 8
           version: 8
 
       # Step: install project dependencies
@@ -44,86 +44,86 @@ jobs:
         # Run pnpm install to restore node_modules
         run: pnpm install
 
-      # Step: run TypeScript type-check to validate build correctness
+      # Step: run TypeScript type-check to validate the build
       - name: Type check (build validation)
-        # Use tsc in noEmit mode to only check types
+        # Use tsc in noEmit mode so we only validate types
         run: pnpm tsc --noEmit
 
   # Second job: lint + unit tests + Playwright tests
   test:
-    # This job depends on the build job and runs only if build succeeds
+    # This job depends on the successful completion of the build job
     needs: build
-    # Use the same Ubuntu Linux runner
+    # Use the same Ubuntu runner
     runs-on: ubuntu-latest
 
-    # This env block defines environment variables for all steps in this job
+    # Environment variables available to all steps in this job
     env:
-      # This provides a SESSION_SECRET value in CI so env schema validation passes
-      # It is a dummy value, safe for tests, not used for real production secrets
-      SESSION_SECRET: ci-session-secret
+      # Provide a valid SESSION_SECRET for CI (at least 32 characters long)
+      # This is a dummy secret used only for tests, not for real production usage
+      SESSION_SECRET: ci-session-secret-1234567890-abcdef
 
     # Steps for the test job
     steps:
-      # Step: checkout the repo again (each job starts in a fresh environment)
+      # Step: checkout the repository again (each job starts clean)
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step: setup Node.js runtime for tests
+      # Step: setup Node.js runtime
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Same Node.js version as in build for consistency
+          # Same Node.js version for consistency
           node-version: 20
 
       # Step: install pnpm for this job
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          # Same pnpm version as in build
+          # Same pnpm version as in the build job
           version: 8
 
-      # Step: install project dependencies for tests
+      # Step: install project dependencies needed for tests
       - name: Install dependencies
-        # Again, run pnpm install; cache speeds this up on repeated runs
+        # Run pnpm install again (cache will speed this up)
         run: pnpm install
 
-      # Step: run ESLint to detect style and potential bug issues
+      # Step: run ESLint to enforce code quality rules
       - name: Run ESLint (lint)
-        # Uses your "lint" script defined in package.json
+        # Uses your package.json "lint" script
         run: pnpm lint
 
-      # Step: run TypeScript type-check inside test job as part of quality gate
+      # Step: run TypeScript type-check as part of the CI quality gate
       - name: Run TypeScript type-check
         # Same tsc noEmit command
         run: pnpm tsc --noEmit
 
-      # Step: run unit and contract tests using Vitest
+      # Step: run unit and contract tests with Vitest
       - name: Run unit tests
         # Uses your "test:unit" script
         run: pnpm test:unit
 
-      # Step: install Playwright browsers on the CI runner
+      # Step: install Playwright browsers on the runner
       - name: Install Playwright browsers
-        # Use Playwright CLI to install Chromium/Firefox/WebKit plus dependencies
+        # Playwright CLI command to install browsers and OS dependencies
         run: npx playwright install --with-deps
 
-      # Step: run Playwright UI/API tests as configured in playwright.config.ts
+      # Step: run Playwright tests (UI and API projects)
       - name: Run Playwright tests
-        # Uses your "test" script which maps to "playwright test"
+        # Uses your "test" script which runs "playwright test"
         run: pnpm test
 
-      # Step: upload Playwright report when any previous step in this job fails
+      # Step: upload Playwright HTML report if any previous step failed
       - name: Upload Playwright report on failure
-        # This condition ensures this runs only if the job failed
+        # Run this step only if the job has failed
         if: failure()
         # Use GitHub's artifact upload action
         uses: actions/upload-artifact@v4
         with:
-          # Name of the artifact shown in the Actions UI
+          # Name for the artifact in GitHub Actions UI
           name: playwright-report
-          # Path to the HTML report folder generated by Playwright
+          # Path to the Playwright report folder
           path: playwright-report
-          # If there is no report folder, ignore it instead of failing
+          # If report folder is missing, do not fail this step
           if-no-files-found: ignore
-          # Keep artifacts for 7 days for investigation
+          # Keep the artifact for 7 days
           retention-days: 7
