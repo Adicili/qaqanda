@@ -11,3 +11,6 @@ __qa_bad__.tsx
 *.svg
 **/.gitkeep
 *.ico
+coverage
+.vscode
+.git
