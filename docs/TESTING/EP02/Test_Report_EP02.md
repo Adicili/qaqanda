@@ -10,20 +10,18 @@
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC01"
 
-✓ EP02-US01 — User Registration Flow (API)
-    ✓ EP02-US01-TC01 — Register with valid data returns 200 (512ms)
-```
+✓ EP02-US01 — User Registration Flow (API)  
+  ✓ EP02-US01-TC01 — Register with valid data returns 200 (512ms)
 
 API response:
 
-```json
+json  
 {
-  "success": true
+"success": true
 }
-```
 
 Notes:  
 The API successfully creates a new user with a unique email. Response is sanitized, no password or sensitive fields returned. Role defaults to `ENGINEER`.
@@ -36,21 +34,19 @@ The API successfully creates a new user with a unique email. Response is sanitiz
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC02"
 
 ✓ EP02-US01-TC02 — register with existing email returns 409 (431ms)
-```
 
 API response:
 
-```json
+json  
 {
-  "errors": {
-    "email": ["Email already in use"]
-  }
+"errors": {
+"email": ["Email already in use"]
 }
-```
+}
 
 Notes:  
 API prevents duplicate registrations and returns proper 409 Conflict.
@@ -63,21 +59,19 @@ API prevents duplicate registrations and returns proper 409 Conflict.
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC03"
 
 ✓ EP02-US01-TC03 — invalid email format returns 400 (298ms)
-```
 
 Payload:
 
-```json
+json  
 {
-  "errors": {
-    "email": ["Invalid email format"]
-  }
+"errors": {
+"email": ["Invalid email format"]
 }
-```
+}
 
 ---
 
@@ -85,11 +79,10 @@ Payload:
 
 **Result:** ✅ PASS
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC04"
 
 ✓ EP02-US01-TC04 — password must contain special char returns 400
-```
 
 ---
 
@@ -97,11 +90,10 @@ $ pnpm qa:api -- -g "EP02-US01-TC04"
 
 **Result:** ✅ PASS
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC05"
 
 ✓ EP02-US01-TC05 — password must contain a number returns 400
-```
 
 ---
 
@@ -109,11 +101,10 @@ $ pnpm qa:api -- -g "EP02-US01-TC05"
 
 **Result:** ✅ PASS
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC06"
 
 ✓ EP02-US01-TC06 — password must be at least 8 chars long returns 400
-```
 
 ---
 
@@ -121,11 +112,10 @@ $ pnpm qa:api -- -g "EP02-US01-TC06"
 
 **Result:** ✅ PASS
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC07"
 
 ✓ EP02-US01-TC07 — password mismatch returns 400
-```
 
 ---
 
@@ -133,11 +123,10 @@ $ pnpm qa:api -- -g "EP02-US01-TC07"
 
 **Result:** ✅ PASS
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US01-TC08"
 
 ✓ EP02-US01-TC08 — empty body returns 400
-```
 
 ---
 
@@ -145,11 +134,10 @@ $ pnpm qa:api -- -g "EP02-US01-TC08"
 
 **Result:** ✅ PASS
 
-```bash
+bash  
 $ pnpm test:ui -- -g "EP02-US01-TC09"
 
 ✓ EP02-US01-TC09 — Register form UI validations (1.8s)
-```
 
 Notes:  
 Client-side validation works: empty submission blocked, email format validated, password mismatch enforced, and no API calls issued when invalid.
@@ -160,7 +148,7 @@ Client-side validation works: empty submission blocked, email format validated, 
 
 **Result:** ✔ Passed
 
-**Summary:**
+**Summary:**  
 The Home page (/) loads successfully and displays expected UI elements including the main hero title and the primary navigation CTA. Clicking the CTA correctly redirects the user to the Registration page.
 
 **What Was Validated:**
@@ -168,10 +156,10 @@ The Home page (/) loads successfully and displays expected UI elements including
 - Successful page load (HTTP 200)
 - Hero/landing UI visible
 - "Register" button/link present
-- Navigation to /register works
+- Navigation to `/register` works
 - Register page displays expected heading after navigation
 
-**Result:**
+**Result:**  
 All assertions passed. Home page is functional and correctly leads users into the onboarding flow.
 
 ---
@@ -180,75 +168,71 @@ All assertions passed. Home page is functional and correctly leads users into th
 
 All US02 registration test cases are automated and passing. Validation logic is consistent across backend and frontend. Playwright POM stable, selectors strong, and tagging integrated.
 
+---
+
 ## **EP02-US02 — Login & Session Cookie**
 
-## EP02-US02-TC01 — Login with valid credentials
+### EP02-US02-TC01 — Login with valid credentials
 
 **Result:** ✅ PASS
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US02-TC01"
 
 ✓ EP02-US02-TC01 — login with valid credentials returns 200
-```
 
 API response:
 
-```json
+json  
 {
-  "success": true
+"success": true
 }
-```
 
 Cookie headers:
 
-```
+text  
 Set-Cookie: qasession=...; HttpOnly; SameSite=Lax
-```
 
 **Notes:**  
 Successful authentication returns 200, produces a signed session cookie with correct flags, and no sensitive information is exposed in the response body.
 
 ---
 
-## EP02-US02-TC02 — Login with incorrect password
+### EP02-US02-TC02 — Login with incorrect password
 
 **Result:** ✅ PASS
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US02-TC02"
 
 ✓ EP02-US02-TC02 — login with incorrect password returns 401
-```
 
 API response:
 
-```json
+json  
 {
-  "error": "Invalid email or password"
+"error": "Invalid email or password"
 }
-```
 
 **Notes:**  
 API correctly handles credential mismatch: generic message returned, no user-specific leaks, and **no session cookie set**.
 
 ---
 
-## EP02-US02-TC03 — Login with non-existing email
+### EP02-US02-TC03 — Login with non-existing email
 
 **Result:** ✅ PASS
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US02-TC03"
 
 ✓ EP02-US02-TC03 — login with non-existing email returns 401
-```
 
 **Notes:**  
 Unknown emails are treated identically to wrong passwords, preventing user enumeration.  
@@ -256,45 +240,42 @@ No cookie is sent in the response.
 
 ---
 
-## EP02-US02-TC04 — Invalid login body (empty / missing fields)
+### EP02-US02-TC04 — Invalid login body (empty / missing fields)
 
 **Result:** ✅ PASS
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm qa:api -- -g "EP02-US02-TC04"
 
 ✓ EP02-US02-TC04 — invalid login body returns 400
-```
 
 Payload example:
 
-```json
+json  
 {
-  "errors": {
-    "email": ["Required"],
-    "password": ["Required"]
-  }
+"errors": {
+"email": ["Required"],
+"password": ["Required"]
 }
-```
+}
 
 **Notes:**  
 Zod schema validation blocks malformed requests early. No authentication logic executed.
 
 ---
 
-## EP02-US02-TC05 — Login form UI field validations
+### EP02-US02-TC05 — Login form UI field validations
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm test:ui -- -g "EP02-US02-TC05"
 
 ✓ EP02-US02-TC05 — Login form UI field validations (2.1s)
-```
 
 **What Was Validated:**
 
@@ -307,17 +288,16 @@ Client-side validation prevents unnecessary backend load and ensures consistent 
 
 ---
 
-## EP02-US02-TC06 — Successful login redirects to Home and unlocks protected routes
+### EP02-US02-TC06 — Successful login redirects to Home and unlocks protected routes
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm test:ui -- -g "EP02-US02-TC06"
 
 ✓ EP02-US02-TC06 — Successful login redirects to home (2.9s)
-```
 
 **What Was Validated:**
 
@@ -347,6 +327,8 @@ Protected pages respect session cookie and remain accessible post-login.
 **All US02 login scenarios passed.**  
 Session handling, cookie creation, redirect logic, and UI validation behave consistently and match the specification.
 
+---
+
 # EP02-US03 — Middleware & Role-Based Route Protection — Test Report
 
 ## Environment
@@ -367,8 +349,8 @@ Session handling, cookie creation, redirect logic, and UI validation behave cons
 - `/login`, `/register`, `/api/auth/*` accessed repeatedly without session
 - Middleware enabled during all runs
 
-**Notes:**
-Middleware does not break public routes or registration/login flows.
+**Notes:**  
+Middleware does not break public routes or registration/login flows.  
 No redirects or 401/403 on unauthenticated access to auth endpoints.
 
 ---
@@ -383,7 +365,7 @@ No redirects or 401/403 on unauthenticated access to auth endpoints.
 - No redirect to `/login`
 - No server error or auth gate
 
-**Notes:**
+**Notes:**  
 `/reports` is not yet a protected route.  
 Behavior will change when EP06 introduces access control.
 
@@ -399,7 +381,7 @@ Behavior will change when EP06 introduces access control.
 - Response body contains error payload
 - No leaked internal data
 
-**Notes:**
+**Notes:**  
 Ask endpoint (even as stub) enforces authentication.  
 Middleware + endpoint alignment validated.
 
@@ -414,7 +396,7 @@ Middleware + endpoint alignment validated.
 - ENGINEER user login → session cookie acquired
 - POST `/api/kb/add` → **403 Forbidden**
 
-**Notes:**
+**Notes:**  
 Negative RBAC scenario validated.  
 `requireLead()` correctly blocks non-lead roles.
 
@@ -429,7 +411,7 @@ Negative RBAC scenario validated.
 - Fake cookie → UI route → redirect `/login`
 - Fake cookie → API → **401 Unauthorized**
 
-**Notes:**
+**Notes:**  
 System rejects forged or replayed tokens (no partial access).
 
 ---
