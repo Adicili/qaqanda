@@ -14,3 +14,7 @@ __qa_bad__.tsx
 coverage
 .vscode
 .git
+
+# Ignore test reports – not source of truth
+docs/TESTING/EP02/Test_Report_EP02.md
+docs/TESTING/EP03/Test_Report_EP03.md
