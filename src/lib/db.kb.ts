@@ -6,11 +6,14 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
+// Vitest/Jest mock detection – u testovima je executeQuery mock funkcija sa `.mock`
+const isExecuteQueryMocked = typeof (executeQuery as any).mock === 'object';
+
 const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
 
 const enableDatabricks =
+  isExecuteQueryMocked ||
   forceDatabricksMock ||
-  ENV.NODE_ENV === 'test' ||
   (ENV.NODE_ENV === 'production' &&
     !!ENV.DATABRICKS_HOST &&
     !!ENV.DATABRICKS_TOKEN &&
