@@ -6,11 +6,15 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
+// eslint-disable-next-line no-restricted-properties
+const forceDatabricksMock = process.env.USE_DATABRICKS_MOCK === '1';
+
 const enableDatabricks =
-  ENV.NODE_ENV === 'production' &&
-  !!ENV.DATABRICKS_HOST &&
-  !!ENV.DATABRICKS_TOKEN &&
-  !!ENV.DATABRICKS_WAREHOUSE_ID;
+  forceDatabricksMock ||
+  (ENV.NODE_ENV === 'production' &&
+    !!ENV.DATABRICKS_HOST &&
+    !!ENV.DATABRICKS_TOKEN &&
+    !!ENV.DATABRICKS_WAREHOUSE_ID);
 
 const memoryQueries: QueryLog[] = [];
 
