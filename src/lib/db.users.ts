@@ -15,8 +15,12 @@ export type DbUser = {
 };
 
 const SCHEMA = 'workspace.qaqanda';
-const hasDatabricksEnv =
-  !ENV.CI && !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
+
+const enableDatabricks =
+  ENV.NODE_ENV === 'production' &&
+  !!ENV.DATABRICKS_HOST &&
+  !!ENV.DATABRICKS_TOKEN &&
+  !!ENV.DATABRICKS_WAREHOUSE_ID;
 
 /**
  * -------------------------
@@ -167,7 +171,7 @@ async function listAllMemory(): Promise<DbUser[]> {
  */
 
 async function getUserByEmail(email: string): Promise<DbUser | null> {
-  if (hasDatabricksEnv) {
+  if (enableDatabricks) {
     return getUserByEmailDatabricks(email);
   }
   return getUserByEmailMemory(email);
@@ -178,14 +182,14 @@ async function create(input: {
   passwordHash: string;
   role: UserRole;
 }): Promise<DbUser> {
-  if (hasDatabricksEnv) {
+  if (enableDatabricks) {
     return createUserDatabricks(input);
   }
   return createUserMemory(input);
 }
 
 async function listAll(): Promise<DbUser[]> {
-  if (hasDatabricksEnv) {
+  if (enableDatabricks) {
     return listAllDatabricks();
   }
   return listAllMemory();

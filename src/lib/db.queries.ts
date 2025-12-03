@@ -2,8 +2,17 @@
 import { randomUUID } from 'node:crypto';
 
 import { executeQuery } from '@/lib/databricksClient';
+import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
+
+const enableDatabricks =
+  ENV.NODE_ENV === 'production' &&
+  !!ENV.DATABRICKS_HOST &&
+  !!ENV.DATABRICKS_TOKEN &&
+  !!ENV.DATABRICKS_WAREHOUSE_ID;
+
+const memoryQueries: QueryLog[] = [];
 
 type DbQueryRow = {
   id: string;
@@ -38,6 +47,22 @@ export async function insertQuery(
   question: string,
   latencyMs: number,
 ): Promise<string> {
+  if (!enableDatabricks) {
+    const id = `local_${randomUUID()}`;
+    memoryQueries.unshift({
+      id,
+      userId,
+      question,
+      latencyMs,
+      createdAt: new Date(),
+    });
+    // neka ne naraste u beskonačnost
+    if (memoryQueries.length > 1000) {
+      memoryQueries.pop();
+    }
+    return id;
+  }
+
   const sql = `
     INSERT INTO ${SCHEMA}.queries (id, user_id, question, latency_ms, created_at)
     VALUES (:id, :userId, :question, :latencyMs, current_timestamp())
@@ -57,6 +82,10 @@ export async function insertQuery(
 }
 
 export async function getRecentByUser(userId: string, limit = 10): Promise<QueryLog[]> {
+  if (!enableDatabricks) {
+    return memoryQueries.filter((q) => q.userId === userId).slice(0, limit);
+  }
+
   const sql = `
     SELECT id, user_id, question, latency_ms, created_at
     FROM ${SCHEMA}.queries

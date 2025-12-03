@@ -2,8 +2,17 @@
 import { randomUUID } from 'node:crypto';
 
 import { executeQuery } from '@/lib/databricksClient';
+import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
+
+const enableDatabricks =
+  ENV.NODE_ENV === 'production' &&
+  !!ENV.DATABRICKS_HOST &&
+  !!ENV.DATABRICKS_TOKEN &&
+  !!ENV.DATABRICKS_WAREHOUSE_ID;
+
+const memoryKbDocs = new Map<string, KBDoc>();
 
 type DbKBDocRow = {
   id: string;
@@ -50,6 +59,10 @@ function mapKBDocRow(row: DbKBDocRow): KBDoc {
 }
 
 export async function getById(id: string): Promise<KBDoc | null> {
+  if (!enableDatabricks) {
+    return memoryKbDocs.get(id) ?? null;
+  }
+
   const sql = `
     SELECT id, title, text, tags, created_at, updated_at
     FROM ${SCHEMA}.kb_docs
@@ -63,6 +76,20 @@ export async function getById(id: string): Promise<KBDoc | null> {
 }
 
 export async function addDoc(title: string, text: string, tags: string[]): Promise<string> {
+  if (!enableDatabricks) {
+    const id = `kb_${randomUUID()}`;
+    const now = new Date();
+    memoryKbDocs.set(id, {
+      id,
+      title,
+      text,
+      tags,
+      createdAt: now,
+      updatedAt: now,
+    });
+    return id;
+  }
+
   const sql = `
     INSERT INTO ${SCHEMA}.kb_docs (id, title, text, tags, created_at, updated_at)
     VALUES (:id, :title, :text, :tags, current_timestamp(), current_timestamp())
@@ -84,6 +111,17 @@ export async function addDoc(title: string, text: string, tags: string[]): Promi
 
 // US kaže updateDoc(id, newText) — držim taj potpis
 export async function updateDoc(id: string, newText: string): Promise<void> {
+  if (!enableDatabricks) {
+    const existing = memoryKbDocs.get(id);
+    if (!existing) return;
+    memoryKbDocs.set(id, {
+      ...existing,
+      text: newText,
+      updatedAt: new Date(),
+    });
+    return;
+  }
+
   const sql = `
     UPDATE ${SCHEMA}.kb_docs
     SET text = :text,
@@ -98,6 +136,12 @@ export async function updateDoc(id: string, newText: string): Promise<void> {
 }
 
 export async function listAll(): Promise<KBDoc[]> {
+  if (!enableDatabricks) {
+    return Array.from(memoryKbDocs.values()).sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+  }
+
   const sql = `
     SELECT id, title, text, tags, created_at, updated_at
     FROM ${SCHEMA}.kb_docs

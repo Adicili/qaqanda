@@ -12,9 +12,9 @@ export default defineConfig({
   testDir: 'tests',
   globalSetup: './tests/support/global-setup.ts',
   timeout: 30000,
-  fullyParallel: false,
+  fullyParallel: true,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 2 : undefined,
+  workers: isCI ? 2 : undefined,
 
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 

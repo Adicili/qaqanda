@@ -1,5 +1,5 @@
 async function globalSetup() {
-  console.warn('⚠️ Skipping local user seed — using Databricks only');
+  console.warn('ℹ️ Tests running with in-memory storage (no Databricks).');
 }
 
 export default globalSetup;
