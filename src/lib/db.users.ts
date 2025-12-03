@@ -15,7 +15,8 @@ export type DbUser = {
 };
 
 const SCHEMA = 'workspace.qaqanda';
-const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
+const hasDatabricksEnv =
+  !ENV.CI && !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
 
 /**
  * -------------------------

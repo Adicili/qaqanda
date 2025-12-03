@@ -11,8 +11,9 @@ export default defineConfig({
   testDir: 'tests',
   globalSetup: './tests/support/global-setup.ts',
   timeout: 30000,
-  fullyParallel: true,
+  fullyParallel: false,
   retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 2 : undefined,
 
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 
@@ -39,15 +40,13 @@ export default defineConfig({
       testDir: 'tests/api',
       use: { baseURL: BASE_URL },
       retries: process.env.CI ? 1 : 0,
-      timeout: process.env.CI ? 60000 : 30000,
     },
   ],
 
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm start',
     port: PORT,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120_000,
-    cwd: process.cwd(),
   },
 });
