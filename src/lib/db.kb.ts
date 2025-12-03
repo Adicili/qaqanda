@@ -6,8 +6,7 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
-// eslint-disable-next-line no-restricted-properties
-const forceDatabricksMock = process.env.USE_DATABRICKS_MOCK === '1';
+const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
 
 const enableDatabricks =
   forceDatabricksMock ||

@@ -21,6 +21,15 @@ const baseSchema = z.object({
       return s === '1' || s === 'true' || s === 'yes';
     })
     .optional(),
+  USE_DATABRICKS_MOCK: z
+    .union([z.string(), z.boolean(), z.number()])
+    .transform((v) => {
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'number') return v !== 0;
+      const s = String(v).toLowerCase().trim();
+      return s === '1' || s === 'true' || s === 'yes';
+    })
+    .optional(),
   EXPECTED_TITLE: z.string().min(1).optional(),
   SESSION_SECRET: z.string().min(32, 'SESSION_SECRET must be at least 32 chars'),
 });
@@ -54,4 +63,5 @@ export const ENV = {
   CI: env.CI,
   EXPECTED_TITLE: env.EXPECTED_TITLE,
   SESSION_SECRET: env.SESSION_SECRET,
+  USE_DATABRICKS_MOCK: env.USE_DATABRICKS_MOCK,
 } as const;

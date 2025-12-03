@@ -16,15 +16,12 @@ export type DbUser = {
 
 const SCHEMA = 'workspace.qaqanda';
 
-// eslint-disable-next-line no-restricted-properties
-const forceDatabricksMock = process.env.USE_DATABRICKS_MOCK === '1';
+const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
 
-const enableDatabricks =
-  forceDatabricksMock ||
-  (ENV.NODE_ENV === 'production' &&
-    !!ENV.DATABRICKS_HOST &&
-    !!ENV.DATABRICKS_TOKEN &&
-    !!ENV.DATABRICKS_WAREHOUSE_ID);
+const hasDatabricksEnv =
+  !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
+
+const useDatabricks = hasDatabricksEnv || forceDatabricksMock;
 
 /**
  * -------------------------
@@ -175,7 +172,7 @@ async function listAllMemory(): Promise<DbUser[]> {
  */
 
 async function getUserByEmail(email: string): Promise<DbUser | null> {
-  if (enableDatabricks) {
+  if (useDatabricks) {
     return getUserByEmailDatabricks(email);
   }
   return getUserByEmailMemory(email);
@@ -186,14 +183,14 @@ async function create(input: {
   passwordHash: string;
   role: UserRole;
 }): Promise<DbUser> {
-  if (enableDatabricks) {
+  if (useDatabricks) {
     return createUserDatabricks(input);
   }
   return createUserMemory(input);
 }
 
 async function listAll(): Promise<DbUser[]> {
-  if (enableDatabricks) {
+  if (useDatabricks) {
     return listAllDatabricks();
   }
   return listAllMemory();
