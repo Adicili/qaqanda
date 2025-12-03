@@ -1,4 +1,4 @@
-// lib/db.queries.ts
+// src/lib/db.queries.ts
 import { randomUUID } from 'node:crypto';
 
 import { executeQuery } from '@/lib/databricksClient';
@@ -10,6 +10,7 @@ const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
 
 const enableDatabricks =
   forceDatabricksMock ||
+  ENV.NODE_ENV === 'test' ||
   (ENV.NODE_ENV === 'production' &&
     !!ENV.DATABRICKS_HOST &&
     !!ENV.DATABRICKS_TOKEN &&
