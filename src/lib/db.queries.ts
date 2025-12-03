@@ -6,18 +6,9 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
-// Vitest/Jest mock detection – u testovima je executeQuery mock sa `.mock`
-const isExecuteQueryMocked = typeof (executeQuery as any).mock === 'object';
-
-const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
-
-const enableDatabricks =
-  isExecuteQueryMocked ||
-  forceDatabricksMock ||
-  (ENV.NODE_ENV === 'production' &&
-    !!ENV.DATABRICKS_HOST &&
-    !!ENV.DATABRICKS_TOKEN &&
-    !!ENV.DATABRICKS_WAREHOUSE_ID);
+// isto pravilo kao u db.users.ts
+const hasDatabricksEnv =
+  !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
 
 const memoryQueries: QueryLog[] = [];
 
@@ -54,7 +45,7 @@ export async function insertQuery(
   question: string,
   latencyMs: number,
 ): Promise<string> {
-  if (!enableDatabricks) {
+  if (!hasDatabricksEnv) {
     const id = `local_${randomUUID()}`;
     memoryQueries.unshift({
       id,
@@ -89,7 +80,7 @@ export async function insertQuery(
 }
 
 export async function getRecentByUser(userId: string, limit = 10): Promise<QueryLog[]> {
-  if (!enableDatabricks) {
+  if (!hasDatabricksEnv) {
     return memoryQueries.filter((q) => q.userId === userId).slice(0, limit);
   }
 

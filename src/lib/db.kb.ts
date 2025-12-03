@@ -6,18 +6,9 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
-// Vitest/Jest mock detection – u testovima je executeQuery mock funkcija sa `.mock`
-const isExecuteQueryMocked = typeof (executeQuery as any).mock === 'object';
-
-const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
-
-const enableDatabricks =
-  isExecuteQueryMocked ||
-  forceDatabricksMock ||
-  (ENV.NODE_ENV === 'production' &&
-    !!ENV.DATABRICKS_HOST &&
-    !!ENV.DATABRICKS_TOKEN &&
-    !!ENV.DATABRICKS_WAREHOUSE_ID);
+// isto kao u db.users.ts – samo proveravamo da li je Databricks konfigurisan
+const hasDatabricksEnv =
+  !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
 
 const memoryKbDocs = new Map<string, KBDoc>();
 
@@ -66,7 +57,7 @@ function mapKBDocRow(row: DbKBDocRow): KBDoc {
 }
 
 export async function getById(id: string): Promise<KBDoc | null> {
-  if (!enableDatabricks) {
+  if (!hasDatabricksEnv) {
     return memoryKbDocs.get(id) ?? null;
   }
 
@@ -83,7 +74,7 @@ export async function getById(id: string): Promise<KBDoc | null> {
 }
 
 export async function addDoc(title: string, text: string, tags: string[]): Promise<string> {
-  if (!enableDatabricks) {
+  if (!hasDatabricksEnv) {
     const id = `kb_${randomUUID()}`;
     const now = new Date();
     memoryKbDocs.set(id, {
@@ -118,7 +109,7 @@ export async function addDoc(title: string, text: string, tags: string[]): Promi
 
 // US kaže updateDoc(id, newText) — držim taj potpis
 export async function updateDoc(id: string, newText: string): Promise<void> {
-  if (!enableDatabricks) {
+  if (!hasDatabricksEnv) {
     const existing = memoryKbDocs.get(id);
     if (!existing) return;
     memoryKbDocs.set(id, {
@@ -143,7 +134,7 @@ export async function updateDoc(id: string, newText: string): Promise<void> {
 }
 
 export async function listAll(): Promise<KBDoc[]> {
-  if (!enableDatabricks) {
+  if (!hasDatabricksEnv) {
     return Array.from(memoryKbDocs.values()).sort(
       (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
