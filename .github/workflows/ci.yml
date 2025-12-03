@@ -115,12 +115,12 @@ jobs:
       # Step: run Playwright tests (API projects)
       - name: Run Playwright API tests
         # Uses your "test" script which runs "playwright test"
-        run: pnpm test:api
+        run: pnpm test:api -- --workers=4
 
       # Step: run Playwright tests (UI projects)
       - name: Run Playwright UI tests
         # Uses your "test" script which runs "playwright test"
-        run: pnpm test:ui
+        run: pnpm test:ui -- --workers=4
 
       # Step: upload Playwright HTML report if any previous step failed
       - name: Upload Playwright report on failure

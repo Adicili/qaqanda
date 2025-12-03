@@ -37,9 +37,9 @@ export default defineConfig({
     {
       name: 'api',
       testDir: 'tests/api',
-      use: {
-        baseURL: BASE_URL,
-      },
+      use: { baseURL: BASE_URL },
+      retries: process.env.CI ? 1 : 0,
+      timeout: process.env.CI ? 60000 : 30000,
     },
   ],
 
