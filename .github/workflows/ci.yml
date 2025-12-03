@@ -117,12 +117,14 @@ jobs:
         # Uses your "test" script which runs "playwright test"
         run: pnpm test:api --workers=4
         env:
-          CI: '1'
+          PORT: 3100
 
       # Step: run Playwright tests (UI projects)
       - name: Run Playwright UI tests
         # Uses your "test" script which runs "playwright test"
         run: pnpm test:ui --workers=4
+        env:
+          PORT: 3200
 
       # Step: upload Playwright HTML report if any previous step failed
       - name: Upload Playwright report on failure

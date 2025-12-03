@@ -6,6 +6,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const PORT = Number(process.env.PORT ?? 3000);
 const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
+const isCI = process.env.CI === '1' || process.env.CI === 'true';
 
 export default defineConfig({
   testDir: 'tests',
@@ -44,9 +45,10 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'pnpm start',
+    command: `pnpm dev --port ${PORT}`,
     port: PORT,
-    reuseExistingServer: false,
+    reuseExistingServer: !isCI,
     timeout: 120_000,
+    cwd: process.cwd(),
   },
 });
