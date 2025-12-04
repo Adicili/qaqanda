@@ -6,9 +6,8 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
-// isto pravilo kao u db.users.ts
-const hasDatabricksEnv =
-  !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
+// opet – isto kao db.users.ts
+const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
 
 const memoryQueries: QueryLog[] = [];
 
@@ -54,10 +53,11 @@ export async function insertQuery(
       latencyMs,
       createdAt: new Date(),
     });
-    // neka ne naraste u beskonačnost
+
     if (memoryQueries.length > 1000) {
       memoryQueries.pop();
     }
+
     return id;
   }
 

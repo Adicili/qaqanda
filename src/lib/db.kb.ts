@@ -6,9 +6,8 @@ import { ENV } from '@/lib/env';
 
 const SCHEMA = 'workspace.qaqanda';
 
-// isto kao u db.users.ts – samo proveravamo da li je Databricks konfigurisan
-const hasDatabricksEnv =
-  !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
+// isti kriterijum kao u db.users.ts
+const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
 
 const memoryKbDocs = new Map<string, KBDoc>();
 
@@ -101,7 +100,7 @@ export async function addDoc(title: string, text: string, tags: string[]): Promi
     id,
     title,
     text,
-    tags: tagsJson, // SqlParams: string ✔
+    tags: tagsJson,
   });
 
   return rows[0]?.id ?? id;
