@@ -46,12 +46,12 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
-const isCi = env.CI === true;
+// ---------------------------------------------------
+// FIXED: Production Databricks guard respects mock flag
+// ---------------------------------------------------
 const forceMock = env.USE_DATABRICKS_MOCK === true;
 
-const shouldRequireDatabricks = env.NODE_ENV === 'production' && !isCi && !forceMock;
-
-if (shouldRequireDatabricks) {
+if (env.NODE_ENV === 'production' && !forceMock) {
   const missing: string[] = [];
 
   if (!env.DATABRICKS_HOST) missing.push('DATABRICKS_HOST');
