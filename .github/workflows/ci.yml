@@ -18,6 +18,9 @@ jobs:
   build:
     # Use an Ubuntu Linux runner
     runs-on: ubuntu-latest
+    env:
+      USE_DATABTICKS_MOCK: 'true'
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
     # Steps for the build job
     steps:
@@ -44,6 +47,9 @@ jobs:
         # Run pnpm install to restore node_modules
         run: pnpm install
 
+      - name: Build (Next.js production build)
+        run: pnpm next build
+
       # Step: run TypeScript type-check to validate the build
       - name: Type check (build validation)
         # Use tsc in noEmit mode so we only validate types
@@ -60,7 +66,8 @@ jobs:
     env:
       # Provide a valid SESSION_SECRET for CI (at least 32 characters long)
       # This is a dummy secret used only for tests, not for real production usage
-      SESSION_SECRET: ci-session-secret-1234567890-abcdef
+      USE_DATABRICKS_MOCK: 'true'
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
     # Steps for the test job
     steps:
