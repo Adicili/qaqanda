@@ -112,12 +112,21 @@ jobs:
         # Playwright CLI command to install browsers and OS dependencies
         run: npx playwright install --with-deps
 
+      - name: Clean Next artifacts
+        run: rm -rf .next
+
+      - name: Build Next app
+        run: pnpm next build
+
       # Step: run Playwright tests (API projects)
       - name: Run Playwright API tests
         # Uses your "test" script which runs "playwright test"
         run: pnpm test:api
         env:
           PORT: 3100
+
+      - name: Clean Next artifacts
+        run: rm -rf .next
 
       # Step: run Playwright tests (UI projects)
       - name: Run Playwright UI tests
