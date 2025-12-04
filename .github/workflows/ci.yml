@@ -19,7 +19,7 @@ jobs:
     # Use an Ubuntu Linux runner
     runs-on: ubuntu-latest
     env:
-      USE_DATABTICKS_MOCK: 'true'
+      USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
     # Steps for the build job
