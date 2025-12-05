@@ -68,6 +68,7 @@ jobs:
       # This is a dummy secret used only for tests, not for real production usage
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      BASE_URL: http://127.0.0.1:3000
 
     # Steps for the test job
     steps:
@@ -125,12 +126,15 @@ jobs:
       - name: Build Next app
         run: pnpm next build
 
+      - name: Start Next app (background)
+        run: |
+          pnpm next start --port 3000 > .next/next.log 2>&1 &
+          npx wait-on http://127.0.0.1:3000
+
       # Step: run Playwright tests (API projects)
       - name: Run Playwright API tests
         # Uses your "test" script which runs "playwright test"
         run: pnpm test:api
-        env:
-          PORT: 3100
 
       - name: Clean Next artifacts
         run: rm -rf .next
@@ -139,8 +143,10 @@ jobs:
       - name: Run Playwright UI tests
         # Uses your "test" script which runs "playwright test"
         run: pnpm test:ui
-        env:
-          PORT: 3200
+
+      - name: Print Next.js logs on failure
+        if: failure()
+        run: cat .next/next.log
 
       # Step: upload Playwright HTML report if any previous step failed
       - name: Upload Playwright report on failure
