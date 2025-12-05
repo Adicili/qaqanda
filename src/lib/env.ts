@@ -47,11 +47,14 @@ if (!parsed.success) {
 const env = parsed.data;
 
 // ---------------------------------------------------
-// FIXED: Production Databricks guard respects mock flag
+// Production Databricks guard
+// - CI: dozvoljeno bez pravih kredencijala (mock / test)
+// - lokal/staging/prod: moraš imati prave varijable
 // ---------------------------------------------------
 const forceMock = env.USE_DATABRICKS_MOCK === true;
+const isCi = env.CI === true;
 
-if (env.NODE_ENV === 'production' && !forceMock) {
+if (env.NODE_ENV === 'production' && !forceMock && !isCi) {
   const missing: string[] = [];
 
   if (!env.DATABRICKS_HOST) missing.push('DATABRICKS_HOST');

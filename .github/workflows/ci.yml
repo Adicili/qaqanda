@@ -129,7 +129,7 @@ jobs:
       - name: Start Next app (background)
         run: |
           pnpm next start --port 3000 > .next/next.log 2>&1 &
-          npx wait-on http://127.0.0.1:3000
+          npx wait-on --timeout 60000 http://127.0.0.1:3000 || (echo "Next failed to start"; cat .next/next.log; exit 1)
 
       # Step: run Playwright tests (API projects)
       - name: Run Playwright API tests
