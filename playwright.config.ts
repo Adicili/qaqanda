@@ -1,12 +1,11 @@
 /* eslint-disable no-restricted-properties */
-// playwright.config.ts
-dotenv.config({ path: '.env.local' });
-
 import dotenv from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
 
+dotenv.config({ path: '.env.local' });
+
 const PORT = Number(process.env.PORT ?? 3000);
-const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
+const BASE_URL = process.env.BASE_URL ?? `http://127.0.0.1:${PORT}`;
 
 // Only treat real CI (GitHub Actions) as CI
 const isCI = process.env.GITHUB_ACTIONS === 'true';

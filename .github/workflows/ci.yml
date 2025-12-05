@@ -55,111 +55,62 @@ jobs:
         # Use tsc in noEmit mode so we only validate types
         run: pnpm tsc --noEmit
 
-  # Second job: lint + unit tests + Playwright tests
   test:
-    # This job depends on the successful completion of the build job
     needs: build
-    # Use the same Ubuntu runner
     runs-on: ubuntu-latest
 
-    # Environment variables available to all steps in this job
     env:
-      # Provide a valid SESSION_SECRET for CI (at least 32 characters long)
-      # This is a dummy secret used only for tests, not for real production usage
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
       BASE_URL: http://127.0.0.1:3000
 
-    # Steps for the test job
     steps:
-      # Step: checkout the repository again (each job starts clean)
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step: setup Node.js runtime
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Same Node.js version for consistency
           node-version: 20
 
-      # Step: install pnpm for this job
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          # Same pnpm version as in the build job
           version: 8
 
-      # Step: install project dependencies needed for tests
       - name: Install dependencies
-        # Run pnpm install again (cache will speed this up)
         run: pnpm install
 
-      # Step: run ESLint to enforce code quality rules
       - name: Run ESLint (lint)
-        # Uses your package.json "lint" script
         run: pnpm lint
 
-      # Step: run TypeScript type-check as part of the CI quality gate
       - name: Run TypeScript type-check
-        # Same tsc noEmit command
         run: pnpm tsc --noEmit
 
-      # Step: run unit and contract tests with Vitest
       - name: Run unit tests
-        # Uses your "test:unit" script
         run: pnpm test:unit
 
-      # Step: run quality/meta test suite (env, lint, scripts, hooks, etc.)
       - name: Run QA meta tests
-        # Uses your "qa:test" script which targets tests/quality/*
         run: pnpm qa:test
 
-      # Step: install Playwright browsers on the runner
       - name: Install Playwright browsers
-        # Playwright CLI command to install browsers and OS dependencies
         run: npx playwright install --with-deps
 
-      - name: Clean Next artifacts
-        run: rm -rf .next
-
-      - name: Build Next app
+      # Build za Next start u webServer-u
+      - name: Build Next app for Playwright
         run: pnpm next build
 
-      - name: Start Next app (background)
-        run: |
-          pnpm next start --port 3000 > .next/next.log 2>&1 &
-          npx wait-on --timeout 60000 http://127.0.0.1:3000 || (echo "Next failed to start"; cat .next/next.log; exit 1)
-
-      # Step: run Playwright tests (API projects)
       - name: Run Playwright API tests
-        # Uses your "test" script which runs "playwright test"
         run: pnpm test:api
 
-      - name: Clean Next artifacts
-        run: rm -rf .next
-
-      # Step: run Playwright tests (UI projects)
       - name: Run Playwright UI tests
-        # Uses your "test" script which runs "playwright test"
         run: pnpm test:ui
 
-      - name: Print Next.js logs on failure
-        if: failure()
-        run: cat .next/next.log
-
-      # Step: upload Playwright HTML report if any previous step failed
       - name: Upload Playwright report on failure
-        # Run this step only if the job has failed
         if: failure()
-        # Use GitHub's artifact upload action
         uses: actions/upload-artifact@v4
         with:
-          # Name for the artifact in GitHub Actions UI
           name: playwright-report
-          # Path to the Playwright report folder
           path: playwright-report
-          # If report folder is missing, do not fail this step
           if-no-files-found: ignore
-          # Keep the artifact for 7 days
           retention-days: 7
