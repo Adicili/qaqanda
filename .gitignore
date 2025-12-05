@@ -30,8 +30,13 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Ignote local env files
+.env.local
+.env.test
+.env.production
+
+# DOZVOLI example template
+!.env.local.example
 
 # vercel
 .vercel

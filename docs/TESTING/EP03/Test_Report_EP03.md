@@ -10,183 +10,220 @@
 
 **Evidence:**
 
-```bash
+bash  
 $ pnpm test:unit -- -t "EP03-US01-TC01"
 
-✓ EP03-US01-TC01 — sends authenticated POST request and maps rows for SELECT
+✓ EP03-US01-TC01 — sends authenticated POST request and maps rows for SELECT  
 Mocked response:
 
-json
-Copy code
+json  
+Copy code  
 {
-  "status": { "state": "FINISHED" },
-  "result": {
-    "schema": {
-      "columns": [
-        { "name": "id", "type_text": "STRING" },
-        { "name": "email", "type_text": "STRING" }
-      ]
-    },
-    "data_array": [
-      ["1", "user1@example.com"],
-      ["2", "user2@example.com"]
-    ]
-  }
+"status": { "state": "FINISHED" },
+"result": {
+"schema": {
+"columns": [
+{ "name": "id", "type_text": "STRING" },
+{ "name": "email", "type_text": "STRING" }
+]
+},
+"data_array": [
+["1", "user1@example.com"],
+["2", "user2@example.com"]
+]
 }
-Notes:
-Result mapping correct.
+}
+
+Notes:  
+Result mapping correct.  
 Authorization + endpoint path validated.
 
-EP03-US01-TC02 — Parameterized SQL escapes values safely
+---
+
+## EP03-US01-TC02 — Parameterized SQL escapes values safely
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC02"
 
-✓ EP03-US01-TC02 — replaces named params with escaped SQL values
+✓ EP03-US01-TC02 — replaces named params with escaped SQL values  
 Example:
 
 Input:
 
-java
-Copy code
+java  
+Copy code  
 WHERE email = :email AND active = :active
+
 Output:
 
-java
-Copy code
+java  
+Copy code  
 WHERE email = 'o''connor@example.com' AND active = TRUE
-Notes:
-Single quote escapes → ''.
+
+Notes:  
+Single quote escapes → ''.  
 Booleans mapped to uppercase SQL constants.
 
-EP03-US01-TC03 — Missing parameter fails fast
+---
+
+## EP03-US01-TC03 — Missing parameter fails fast
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC03"
 
 ✓ EP03-US01-TC03 — throws if a param in SQL has no value provided
-Notes:
-No silent fallback or null param injection.
+
+Notes:  
+No silent fallback or null param injection.  
 Correct error type: DatabricksClientError.
 
-EP03-US01-TC04 — Unused parameters cause error
+---
+
+## EP03-US01-TC04 — Unused parameters cause error
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC04"
 
 ✓ EP03-US01-TC04 — throws if there are unused params
-Notes:
+
+Notes:  
 Prevents packing payload with extra fields → blocks SQL injection vectors.
 
-EP03-US01-TC05 — Retry on transient 5xx
+---
+
+## EP03-US01-TC05 — Retry on transient 5xx
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC05"
 
-✓ EP03-US01-TC05 — retries on 5xx and eventually succeeds
+✓ EP03-US01-TC05 — retries on 5xx and eventually succeeds  
 Mock scenario:
 
 Attempt 1: HTTP 500
 
 Attempt 2: FINISHED
 
-Notes:
-Retry policy applies only to 5xx.
+Notes:  
+Retry policy applies only to 5xx.  
 Stops when successful.
 
-EP03-US01-TC06 — Timeout → DatabricksTimeoutError
+---
+
+## EP03-US01-TC06 — Timeout → DatabricksTimeoutError
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC06"
 
 ✓ EP03-US01-TC06 — throws DatabricksTimeoutError on timeout and respects retries
-Notes:
-AbortController respected.
+
+Notes:  
+AbortController respected.  
 Invocations = maxRetries + 1.
 
-EP03-US01-TC07 — Non-5xx → DatabricksClientError
+---
+
+## EP03-US01-TC07 — Non-5xx → DatabricksClientError
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC07"
 
-✓ EP03-US01-TC07 — throws DatabricksClientError on non-5xx failure
+✓ EP03-US01-TC07 — throws DatabricksClientError on non-5xx failure  
 Mock:
 
-nginx
-Copy code
+nginx  
+Copy code  
 HTTP 400 → DatabricksClientError
-Notes:
-No retries on client-side failures.
+
+Notes:  
+No retries on client-side failures.  
 Correct error class.
 
-EP03-US01-TC08 — Statements without result set return []
+---
+
+## EP03-US01-TC08 — Statements without result set return []
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC08"
 
-✓ EP03-US01-TC08 — returns empty array for statements without result set
-Notes:
-Non-query commands (INSERT/UPDATE/DELETE) → [].
+✓ EP03-US01-TC08 — returns empty array for statements without result set (e.g. INSERT)
+
+Notes:  
+Non-query commands (INSERT/UPDATE/DELETE) → [].  
 Zero-return behavior is consistent.
 
-EP03-US01-TC09 — Invalid ENV shuts down early
+---
+
+## EP03-US01-TC09 — Invalid ENV shuts down early
+
 Result: ✅ PASS
 
 Evidence:
 
-bash
-Copy code
+bash  
+Copy code  
 $ pnpm test:unit -- -t "EP03-US01-TC09"
 
 ✓ EP03-US01-TC09 — fails fast when ENV is missing Databricks config
-Notes:
-No network call.
-Fast-fail ensures host/token required.
+
+Notes:  
+No network call.  
+Fast-fail ensures host/token required.  
 Correct exception: DatabricksClientError.
 
-US01 Summary
-Test Case	Status
-TC01	PASS
-TC02	PASS
-TC03	PASS
-TC04	PASS
-TC05	PASS
-TC06	PASS
-TC07	PASS
-TC08	PASS
-TC09	PASS
+---
 
-All EP03-US01 scenarios are passing.
+## US01 Summary
+
+Test Case Status  
+TC01 PASS  
+TC02 PASS  
+TC03 PASS  
+TC04 PASS  
+TC05 PASS  
+TC06 PASS  
+TC07 PASS  
+TC08 PASS  
+TC09 PASS
+
+All EP03-US01 scenarios are passing.  
 Wrapper is safe, deterministic, and resilient to transient backend failures.
-```
+
+---
 
 ## EP03-US02 — Schema Definition & Seed Verification — Test Report
 
@@ -292,6 +329,8 @@ US02 is production-ready.
 Live Warehouse schema is intact, seed data exists, and the Databricks client retrieves it without issues.  
 This unblocks EP03-US03 (repository layer) and allows higher features to rely on real data instead of mocks.
 
+---
+
 # EP03-US03 — Database Access Layer Modules — Test Report
 
 ## Environment
@@ -314,12 +353,12 @@ This unblocks EP03-US03 (repository layer) and allows higher features to rely on
 - When `executeQuery` returns empty array → returns `null`
 - SQL contains `FROM ...users` & `WHERE email = :email`
 
-**Notes:**
-Validates positive / negative READ behavior, parameterization, and row→domain mapping.
+**Notes:**  
+Validates basic READ behavior and mapping for Users repository.
 
 ---
 
-## EP03-US03-TC02 — Users.create inserts user via parameterized SQL and returns id
+## EP03-US03-TC02 — Users.create inserts user via parameterized SQL and returns new id
 
 **Result:** ✔ Passed
 
@@ -329,9 +368,8 @@ Validates positive / negative READ behavior, parameterization, and row→domain 
 - Second SELECT pulls record back from DB mock
 - Returned object includes id, email, role, createdAt (Date)
 
-**Notes:**
-Covers full CREATE path.  
-Prevented plain-text interpolation of password/email.
+**Notes:**  
+Covers CREATE behavior and enforces parameterized SQL (no string concatenation).
 
 ---
 
@@ -341,13 +379,13 @@ Prevented plain-text interpolation of password/email.
 
 **Evidence:**
 
-- `executeQuery` returns multiple rows
+- `executeQuery` returns multiple user rows
 - Repository maps each to typed `DbUser`
 - No raw row objects leaked
 - SQL includes `ORDER BY created_at DESC`
 
-**Notes:**
-Sets foundation for future admin-only filtering policies.
+**Notes:**  
+This test prepares for later admin-only listing; auth not checked here, only data mapping.
 
 ---
 
@@ -357,102 +395,127 @@ Sets foundation for future admin-only filtering policies.
 
 **Evidence:**
 
-- Parameterized `WHERE id = :id`
-- JSON string for tags parsed to `string[]`
-- Missing record correctly returns `null`
+- Mock executeQuery:  
+  case A: single row for id "kb-001"  
+  case B: empty array
+- SQL uses "FROM kb_docs WHERE id = :id" and parameter :id
+- Case A: returns object with id, title, text, tags, updatedAt
+- Case B: returns null
 
-**Notes:**
-Validates tag serialization/deserialization and doc mapping.
+**Notes:**  
+Ensures the KB repository correctly maps Databricks rows to the KB doc model.
 
 ---
 
-## EP03-US03-TC05 — KB.addDoc uses parameterized INSERT and returns id
+## EP03-US03-TC05 — KB.addDoc inserts doc and returns new id
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-- Inserts with `:title`, `:text`, `:tags`
-- Tags passed as JSON string (not plain array)
-- Returned id matches mocked DB response
+- Mock executeQuery to behave as INSERT returning new id
+- Call addDoc("Title", "Text", ["tag1", "tag2"])
+- executeQuery called once with SQL that:
+  - Inserts into kb_docs
+  - Uses parameters for title, text, tags
+- No raw string concatenation of title/text in SQL
+- Return value is new KB document id
 
-**Notes:**
-Confirms CREATE integrity & SQL safety.
+**Notes:**  
+Verifies CREATE path and param handling for tags (array).
 
 ---
 
-## EP03-US03-TC06 — KB.updateDoc uses parameterized UPDATE
+## EP03-US03-TC06 — KB.updateDoc updates text using parameterized SQL
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-- UPDATE uses `SET text = :text` and `WHERE id = :id`
-- No SQL interpolation
-- No hidden side-effects or extra queries
+- Mock executeQuery to confirm it was called, return empty array or affected row count
+- Call updateDoc("kb-001", "New content")
+- executeQuery called with UPDATE statement on kb_docs
+- SQL includes WHERE id = :id and SET text = :text (or equivalent)
+- No direct interpolation of id or text into the SQL string
+- No exceptions for valid input
 
-**Notes:**
-Validates mutation logic without leaking content into SQL.
+**Notes:**  
+Ensures UPDATE uses named parameters and does not leak content into logs or error messages.
 
 ---
 
-## EP03-US03-TC07 — KB.listAll returns typed KB docs
+## EP03-US03-TC07 — KB.listAll returns typed array of KB docs
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-- Maps tags JSON → array
-- Converts timestamps to Date
-- Ensures typed output, no raw DB fields
+- Mock executeQuery to return multiple KB rows
+- Call listAll()
+- executeQuery selects from kb_docs
+- Function returns array of typed KB docs
+- No raw Databricks rows leaked upward
 
-**Notes:**
-Repository acts as the strict domain boundary.
+**Notes:**  
+Establishes KB repository as the single mapping layer between SQL and domain objects.
 
 ---
 
-## EP03-US03-TC08 — insertQuery uses parameterized INSERT
+## EP03-US03-TC08 — Queries.insertQuery logs question and latency via paramized INSERT
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-- SQL bound with `:userId`, `:question`, `:latencyMs`
-- No direct string interpolation of question
-- Returns generated id
+- Mock executeQuery
+- Call insertQuery("user-123", "How to reset password?", 150)
+- executeQuery called with INSERT into queries
+- SQL uses parameters (:userId, :question, :latencyMs or equivalent)
+- question is not interpolated directly into SQL string
+- Function resolves successfully, no return value needed or returns new id if designed so
 
-**Notes:**
-Future analytics are safe from injection risks.
+**Notes:**  
+Confirms logging uses safe parameterization and supports later analytics.
 
 ---
 
-## EP03-US03-TC09 — getRecentByUser returns recent queries
+## EP03-US03-TC09 — Queries.getRecentByUser returns recent queries in correct order
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-- Ordered descending via `created_at DESC`
-- latency_ms parsed from string → number
-- Full mapping to typed `QueryLog`
+- Mock executeQuery to return multiple query rows with different created_at timestamps
+- Call getRecentByUser("user-123")
+- SQL includes WHERE user_id = :userId
+- SQL includes ORDER BY created_at DESC (or another defined ordering)
+- Returned array is typed (id, userId, question, latencyMs, createdAt)
+- Order in returned array matches expected ordering
 
-**Notes:**
-Data-layer guarantees for EP06 reporting & EP04 history.
+**Notes:**  
+Supports later EP06 reporting and EP04 ask history features.
 
 ---
 
-## EP03-US03-TC10 — Repositories do not log sensitive data
+## EP03-US03-TC10 — Repository functions do not log sensitive data or raw SQL
 
 **Result:** ✔ Passed
 
 **Evidence:**
 
-- `console.log/error/warn` spied & never called
-- Repository throws errors without dumping SQL or secrets
-- Tested under Users/KBDocs/Queries failure
+- Mock logger (for example console or custom logger)
+- Mock executeQuery to throw a DatabricksClientError
+- Trigger a repository method (for example create or insertQuery) that causes executeQuery to throw
+- Assert how logging is performed
 
-**Notes:**
-Critical for production compliance & audit expectations.
+Expected Result:
+
+- Error is propagated or wrapped without logging full SQL statement or raw secrets
+- Log messages (if any) contain high-level error info only (for example "DB error" and error code)
+- No email, password hash, token, or full SQL text appears in logged output
+
+**Notes:**  
+Enforces acceptance criteria “No sensitive logs or unescaped SQL” from the user story.
 
 ---
 
@@ -472,7 +535,7 @@ Critical for production compliance & audit expectations.
 | TC10 — no sensitive logs | ✔ PASS |
 
 **Total:** 10 test cases  
-**Automation:** 100%
+**Automation:** 100% planned
 
 ---
 
@@ -491,6 +554,8 @@ Critical for production compliance & audit expectations.
 **US03 is production-ready.**  
 Data access layer is typed, modular, safe, and enforceable with contract tests.  
 Higher-level EP04+ can safely depend on this layer without architectural risk.
+
+---
 
 ## EP03-US04 — Canary Integration — Test Report
 
@@ -518,7 +583,7 @@ Higher-level EP04+ can safely depend on this layer without architectural risk.
 - Re-validates updated row
 - Verifies typed domain output (strings, arrays, dates)
 
-**Notes:**
+**Notes:**  
 This test represents the core end-to-end health check of the live Databricks layer.  
 During CI → skipped.  
 During DEV/STAGING → must be green or deployment is blocked.
@@ -531,13 +596,13 @@ During DEV/STAGING → must be green or deployment is blocked.
 
 **Evidence (Design Validation):**
 
-- RW token → INSERT must succeed
-- RW token → UPDATE must succeed
-- Switch to RO token
-- RO → INSERT must fail
-- RO → UPDATE must fail
+- Read-write token → INSERT must succeed
+- Read-write token → UPDATE must succeed
+- Switch to read-only token
+- Read-only → INSERT must fail
+- Read-only → UPDATE must fail
 
-**Notes:**
+**Notes:**  
 This is a real RBAC boundary check against Databricks.  
 If RO can mutate → environment is compromised → **hard stop release**.
 
@@ -561,7 +626,7 @@ If RO can mutate → environment is compromised → **hard stop release**.
   - `tags` must be JSON or array
   - timestamps → Date
 
-**Notes:**
+**Notes:**  
 Prevents silent DB schema edits from breaking repos and downstream features (EP04/EP05).
 
 ---
@@ -580,14 +645,12 @@ Prevents silent DB schema edits from breaking repos and downstream features (EP0
 - Canary has **dedicated Vitest config**:
   - `vitest.canary.config.ts`
 - Canary is triggered using **explicit developer action**:
-  ```
-  pnpm test:canary
-  ```
+  - `pnpm test:canary`
 - **PR CI never runs Canary**:
   - Confirms isolation
   - Keeps pipelines fast
 
-**Notes:**
+**Notes:**  
 This test is not executed in automated unit/integration pipelines.  
 It is performed **after standard CI**, either:
 
@@ -602,29 +665,27 @@ The intent is **process reliability**, not correctness of code.
 
 **Type:** Process / Pipeline  
 **Priority:** P0  
-**Automated:** Yes (Pipeline gating)
+**Automated:** Yes
 
 **Result:** ✔ Planned — Executed **after CI**
 
 **Evidence (Design Intent):**
 
-- Canary runs in a dedicated release stage:
-  - `staging_release`
-  - `preprod_gate`
-- If Canary returns non-zero exit code:
-  - deployment is blocked
-  - maintainers must investigate
+- Release pipeline includes a step to run `pnpm test:canary` against the target environment
+- When canary tests pass, release pipeline continues
+- When canary tests fail, pipeline is marked as failed or blocked
+- No deployment to staging/production occurs while canary is red
 
 **Manual Verification Scenario:**
 
-1. Trigger staging pipeline
-2. Simulate Databricks failure (invalid token / revoked warehouse)
-3. Canary returns error
-4. Pipeline halts
+1. Trigger staging/preprod release pipeline
+2. Ensure pipeline step executes canary test suite
+3. Intentionally break canary preconditions in a safe way (for example change env var or use invalid token) to simulate failure
+4. Observe pipeline result
 
-**Notes:**
-Evidence is pipeline logs/screenshots, not frequent execution.  
-This test exists to enforce that Canary is a **release safety net**, not a decoration.
+**Notes:**  
+This test case can be documented with one-time evidence (screenshots/logs) rather than being executed frequently.  
+It proves that canary truly acts as a release gate, not just a “nice-to-have” test.
 
 ---
 

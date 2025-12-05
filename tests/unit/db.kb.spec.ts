@@ -1,5 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.mock('@/lib/env', () => ({
+  ENV: {
+    NODE_ENV: 'test',
+    SESSION_SECRET: 'test-secret',
+    DATABRICKS_HOST: 'https://dummy-databricks.example.com',
+    DATABRICKS_TOKEN: 'test-token',
+  },
+}));
+
 const executeQueryMock = vi.fn();
 
 vi.mock('@/lib/databricksClient', () => ({

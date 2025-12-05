@@ -1,95 +1,13 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { existsSync, readdirSync, statSync } from 'node:fs';
-import { join, extname } from 'node:path';
 
 import { expect, it, describe } from 'vitest';
 
 const execFileP = promisify(execFile);
 
-// Prettier-handled extensions (skip junk like .gitattributes / .ico)
-const EXTS = new Set([
-  '.ts',
-  '.tsx',
-  '.js',
-  '.jsx',
-  '.json',
-  '.md',
-  '.css',
-  '.mjs',
-  '.cjs',
-  '.yml',
-  '.yaml',
-  '.html',
-  '.svg',
-]);
-
-const IGNORE_DIRS = new Set([
-  'node_modules',
-  '.git',
-  '.next',
-  'out',
-  'build',
-  'playwright-report',
-  'test-results',
-  'dist',
-  'coverage',
-]);
-
-function walk(root: string): string[] {
-  const out: string[] = [];
-  const dive = (dir: string) => {
-    let entries: string[] = [];
-    try {
-      entries = readdirSync(dir);
-    } catch {
-      return;
-    }
-    for (const name of entries) {
-      const p = join(dir, name);
-      let st;
-      try {
-        st = statSync(p);
-      } catch {
-        continue;
-      }
-      if (st.isDirectory()) {
-        if (!IGNORE_DIRS.has(name)) dive(p);
-      } else {
-        const ext = extname(p).toLowerCase();
-        if (EXTS.has(ext)) out.push(p);
-      }
-    }
-  };
-  dive(root);
-  return out;
-}
-
-async function trackedFilesOrFallback(): Promise<string[]> {
-  // Prefer git if available
-  try {
-    const { stdout } = await execFileP('git', ['ls-files']);
-    const files = stdout
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .filter((p) => EXTS.has(extname(p).toLowerCase()))
-      .filter((p) => existsSync(p));
-    if (files.length) return files;
-  } catch {
-    // ignore and fallback
-  }
-  // Fallback: crawl repo
-  return walk(process.cwd());
-}
-
-async function run(cmd: string) {
-  // Try bash (WSL/Git Bash); if not, use Windows cmd
-  try {
-    return await execFileP('bash', ['-lc', cmd]);
-  } catch {
-    const shell = process.env.COMSPEC || 'cmd';
-    return await execFileP(shell, ['/d', '/s', '/c', cmd]);
-  }
+// Helper to run a shell command in a cross-platform way
+async function run(cmd: string, args: string[] = []) {
+  return execFileP(cmd, args, { shell: true });
 }
 
 describe('EP01-US02 - Linting & Formatting', () => {
@@ -99,24 +17,24 @@ describe('EP01-US02 - Linting & Formatting', () => {
    *
    * Covers:
    * - Prettier configuration correctness
-   * - Enforced formatting across committed files
-   * - Prevents inconsistent code styling
+   * - Enforced formatting across the codebase
+   *
+   * Implementation note:
+   * We deliberately reuse the official script "pnpm format:check"
+   * instead of re-implementing file discovery logic here.
+   * If this script fails, CI will fail and this test will surface
+   * Prettier output to help debugging.
    */
   it('EP01-US02-TC02 - Prettier configured and enforces formatting', async () => {
-    const files = await trackedFilesOrFallback();
-    expect(files.length).toBeGreaterThan(0);
-
-    const normalized = files.map((f) => f.replace(/\\/g, '/'));
-    const cmd = `pnpm prettier --check ${normalized.join(' ')}`;
-
     try {
-      const { stdout, stderr } = await run(cmd);
-      // Exit 0 == clean. Prettier can be silent; that’s fine.
+      const { stdout, stderr } = await run('pnpm', ['format:check']);
       const out = (stdout + stderr).toLowerCase();
+
+      // Sanity check: no obvious parser/config errors in the output
       expect(out).not.toMatch(/\[error]|no parser could be inferred/i);
     } catch (err: any) {
-      // Non-zero means violations or config issues — surface the output
       const out = ((err?.stdout || '') + (err?.stderr || '')).trim();
+      // Surface Prettier / pnpm output if available, otherwise generic message
       throw new Error(out || 'prettier failed');
     }
   });
