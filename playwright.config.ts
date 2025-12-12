@@ -49,7 +49,7 @@ export default defineConfig({
   webServer: {
     command: isCI ? `pnpm next start --port ${PORT}` : `pnpm dev --port ${PORT}`,
     url: BASE_URL,
-    reuseExistingServer: !isCI,
+    reuseExistingServer: true,
     timeout: 120_000,
     cwd: process.cwd(),
   },
