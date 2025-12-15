@@ -1,19 +1,14 @@
 # This sets the human-readable name of the workflow
 name: CI - Build & Test
 
-# This section defines which GitHub events will trigger this workflow
 on:
-  # This event triggers on every Pull Request
   pull_request:
-
-  # This event triggers on direct pushes to branches
   push:
-    # We restrict push triggers to the main branch only
     branches:
       - main
 
-# This section defines the jobs for this workflow
 jobs:
+  # 1) Build job: Next build + typecheck
   build:
     runs-on: ubuntu-latest
     env:
@@ -43,14 +38,13 @@ jobs:
       - name: Type check (build validation)
         run: pnpm tsc --noEmit
 
+  # 2) Test job: lint + unit + QA + Playwright (server start PREPUŠTEN Playwright-u)
   test:
     needs: build
     runs-on: ubuntu-latest
     env:
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-      PORT: 3000
-      BASE_URL: http://127.0.0.1:3000
 
     steps:
       - name: Checkout repository
@@ -84,28 +78,12 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      - name: Clean Next artifacts
-        run: rm -rf .next
-
-      - name: Build Next app
-        run: pnpm next build
-
-      # ⬇⬇⬇ OVO JE JEDINI KO STARTUJE SERVER ⬇⬇⬇
-      - name: Start Next app (background)
-        run: |
-          pnpm next start --port 3000 > .next/next.log 2>&1 &
-          echo "Next started with PID $!"
-          npx wait-on --timeout 120000 http://127.0.0.1:3000 || (echo "Next failed to start"; cat .next/next.log; exit 1)
-
-      - name: Run Playwright API tests
+      # NEMA ručnog next start, nema rm -rf .next, NEMA wait-on ovde.
+      - name: Run Playwright tests (API)
         run: pnpm test:api
 
-      - name: Run Playwright UI tests
+      - name: Run Playwright tests (UI)
         run: pnpm test:ui
-
-      - name: Print Next.js logs on failure
-        if: failure()
-        run: cat .next/next.log
 
       - name: Upload Playwright report on failure
         if: failure()
