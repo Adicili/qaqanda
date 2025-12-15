@@ -1,5 +1,6 @@
 /* eslint-disable no-restricted-properties */
 // playwright.config.ts
+
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 import { defineConfig, devices } from '@playwright/test';
@@ -43,6 +44,7 @@ export default defineConfig({
     },
   ],
 
+  // KLJUČNO: Playwright sam startuje dev server.
   webServer: {
     command: 'pnpm dev',
     port: PORT,

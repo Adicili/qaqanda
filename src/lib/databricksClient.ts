@@ -3,6 +3,135 @@ import { ENV } from '@/lib/env';
 
 export type SqlParams = Record<string, string | number | boolean | null | undefined>;
 
+// --- MOCK MODE STATE (used when USE_DATABRICKS_MOCK = true) ---
+
+const useDatabricksMock = ENV.USE_DATABRICKS_MOCK === true;
+
+type UserRow = {
+  id: string;
+  email: string;
+  password_hash: string;
+  role: string;
+  created_at: string;
+};
+
+const mockUsers: UserRow[] = [];
+
+// Tiny helper so we don't explode on undefined
+
+function findEmailInParams(params: SqlParams): string | null {
+  if (typeof params.email === 'string') {
+    return params.email;
+  }
+
+  for (const v of Object.values(params)) {
+    if (typeof v === 'string' && v.includes('@')) {
+      return v;
+    }
+  }
+
+  return null;
+}
+
+function isUsersTableSelect(normalized: string): boolean {
+  // Match: FROM users, FROM default.users, FROM "default".users, etc.
+  return /from\s+[\w."`]*users\b/.test(normalized);
+}
+
+function isUsersTableInsert(normalized: string): boolean {
+  // Match: INSERT INTO users, INSERT INTO default.users, INSERT INTO "default".users, itd.
+  return /insert\s+into\s+[\w."`]*users\b/.test(normalized);
+}
+
+function executeQueryMock<T>(sql: string, params: SqlParams): T[] {
+  const normalized = sql.trim().toLowerCase();
+
+  // --- SELECT ... FROM users WHERE ... email ... ---
+  if (
+    isUsersTableSelect(normalized) &&
+    normalized.includes('where') &&
+    normalized.includes('email')
+  ) {
+    // 1) Try reading email literal from SQL: WHERE ... email = 'foo@bar'
+    let emailValue: string | null = null;
+    const match = /where\s+.*email.*=\s*'([^']+)'/i.exec(sql);
+    if (match) {
+      emailValue = match[1];
+    } else {
+      // 2) Fall back to params: look for an email-like string
+      emailValue = findEmailInParams(params);
+    }
+
+    if (!emailValue) {
+      return [] as T[];
+    }
+
+    const emailLower = emailValue.toLowerCase();
+    const row = mockUsers.find((u) => u.email.toLowerCase() === emailLower);
+    return (row ? [row as unknown as T] : []) as T[];
+  }
+
+  // --- INSERT INTO users (...) VALUES (...) ---
+  // --- INSERT INTO users (...) VALUES (...) ---
+  if (isUsersTableInsert(normalized)) {
+    let rowData: Record<string, unknown> = {};
+
+    // Try to parse: INSERT INTO <schema>.users (col1, col2) VALUES (val1, val2)
+    const insertMatch = /into\s+[\w."`]*users\s*\(([^)]+)\)\s*values\s*\(([^)]+)\)/i.exec(sql);
+    if (insertMatch) {
+      const colNames = insertMatch[1].split(',').map((s) => s.trim().replace(/["`]/g, ''));
+      const values = insertMatch[2].split(',').map((s) => s.trim());
+
+      if (colNames.length === values.length) {
+        rowData = {};
+        for (let i = 0; i < colNames.length; i++) {
+          const col = colNames[i];
+          let val = values[i];
+
+          // Strip quotes for string literals
+          if (val.startsWith("'") && val.endsWith("'")) {
+            val = val.slice(1, -1).replace(/''/g, "'");
+          }
+
+          rowData[col] = val;
+        }
+      }
+    }
+
+    const rawId =
+      rowData.id ??
+      (params as any).id ??
+      `local_${(globalThis as any).crypto?.randomUUID?.() ?? Date.now().toString(36)}`;
+
+    const rawEmail = rowData.email ?? findEmailInParams(params) ?? 'unknown@example.com';
+
+    const rawPasswordHash =
+      rowData.password_hash ?? (params as any).password_hash ?? (params as any).passwordHash ?? '';
+
+    const rawRole = rowData.role ?? params.role ?? 'ENGINEER';
+
+    const userRow: UserRow = {
+      id: String(rawId),
+      email: String(rawEmail),
+      password_hash: String(rawPasswordHash),
+      role: String(rawRole),
+      created_at: new Date().toISOString(),
+    };
+
+    mockUsers.push(userRow);
+    // Repos usually only care that *some* id came back for INSERT
+    return [{ id: userRow.id } as unknown as T];
+  }
+
+  // --- SELECT * FROM users (no WHERE) ---
+  if (isUsersTableSelect(normalized) && !normalized.includes('where')) {
+    return mockUsers as unknown as T[];
+  }
+
+  // Anything else (kb, queries, etc.) – not needed for current API tests.
+  return [] as T[];
+}
+
 export interface DatabricksClientOptions {
   timeoutMs?: number;
   maxRetries?: number;
@@ -121,8 +250,8 @@ async function fetchWithTimeout(
 }
 
 function isTerminalSuccess(state?: string): boolean {
-  // Statement Execution API – SUCCEEDED je normalan success,
-  // FINISHED/CLOSED uzimamo kao “ok, gotovo”
+  // Statement Execution API – SUCCEEDED is normal success,
+  // FINISHED/CLOSED we also treat as “done”.
   return state === 'SUCCEEDED' || state === 'FINISHED' || state === 'CLOSED' || !state;
 }
 
@@ -144,12 +273,12 @@ function extractErrorMessage(payload: DatabricksSqlResponse): string {
 function mapResult<T = Record<string, unknown>>(json: any): T[] {
   const result = json?.result ?? json;
 
-  // 1) Format: result.data je već niz objekata { c: 2, ... }
+  // 1) Format: result.data is already an array of objects { c: 2, ... }
   if (Array.isArray(result?.data) && result.data.length > 0 && typeof result.data[0] === 'object') {
     return result.data as T[];
   }
 
-  // 2) Generalizovani array-of-arrays format
+  // 2) Generalized array-of-arrays format
   const columns =
     result?.schema?.columns ?? json?.schema?.columns ?? json?.manifest?.schema?.columns;
 
@@ -241,15 +370,21 @@ export async function executeQuery<T = Record<string, unknown>>(
 ): Promise<T[]> {
   const { timeoutMs = 15_000, maxRetries = 2 } = options;
 
+  // Always validate/expand params into SQL
+  const finalSql = buildSqlWithParams(sql, params);
+
+  if (useDatabricksMock) {
+    // Use the final, interpolated SQL – easier to reason about in the mock
+    return executeQueryMock<T>(finalSql, params);
+  }
+
   if (!ENV.DATABRICKS_HOST || !ENV.DATABRICKS_TOKEN || !ENV.DATABRICKS_WAREHOUSE_ID) {
     throw new DatabricksClientError('Databricks environment not configured');
   }
 
-  const finalSql = buildSqlWithParams(sql, params);
-
   const postUrl = new URL('/api/2.0/sql/statements', ENV.DATABRICKS_HOST).toString();
 
-  // Databricks traži wait_timeout između 5 i 50 sekundi
+  // Databricks requires wait_timeout between 5 and 50 seconds
   const timeoutSeconds = Math.min(Math.max(Math.floor(timeoutMs / 1000), 5), 50);
 
   const body = JSON.stringify({
@@ -296,7 +431,7 @@ export async function executeQuery<T = Record<string, unknown>>(
       const json = (await response.json()) as DatabricksSqlResponse;
       const state = json.status?.state;
 
-      // Ako je već uspeo i imamo rezultat inline – gotovo
+      // If it already succeeded inline, we're done
       if (isTerminalSuccess(state)) {
         return mapResult<T>(json);
       }

@@ -1,8 +1,15 @@
+// app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 
 import { registerSchema } from '@/schemas/auth';
 import { dbUsers } from '@/lib/db.users';
+import { ENV } from '@/lib/env';
+
+const isProd = ENV.NODE_ENV === 'production';
+
+// Be brutal in tests/dev: make hashing cheap
+const BCRYPT_SALT_ROUNDS = isProd ? 12 : 4;
 
 export async function POST(request: NextRequest) {
   try {
@@ -31,6 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { email, password } = result.data;
+
     const existingUser = await dbUsers.getUserByEmail(email);
 
     if (existingUser) {
@@ -44,7 +52,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 12);
+    const passwordHash = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
 
     await dbUsers.create({
       email,
@@ -59,7 +67,9 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
+    // This should *not* be happening silently.
     console.error('Register API error:', error);
+
     return NextResponse.json(
       {
         error: 'Internal server error',

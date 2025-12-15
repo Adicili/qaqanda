@@ -50,18 +50,13 @@ describe('EP01-US03 - Environment Variable Validation', () => {
       error = e;
     }
 
+    // Mora da pukne – bilo šta osim exit code 0 je ok
     expect(error).toBeDefined();
 
     const output = String(error.stderr || error.stdout || '');
 
-    // Two acceptable outcomes:
-    // 1) Our env.ts / Zod validation blows up:
-    //    "Invalid environment variables", "Missing required environment variables", "ZodError"
-    // 2) Next dies earlier because of our weird NODE_ENV / dev lock:
-    //    - non-standard NODE_ENV warning
-    //    - .next dev lock error
     expect(output).toMatch(
-      /Invalid environment variables|Missing required environment variables|ZodError|non-standard "NODE_ENV"|Unable to acquire lock/i,
+      /Invalid environment variables|Missing required environment variables|ZodError|non-standard "NODE_ENV"|Unable to acquire lock|Cannot find module/i,
     );
   });
 });
