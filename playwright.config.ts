@@ -4,11 +4,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true';
 
-if (isCI) {
-  // Disable dotenv in CI, use only CI-provided env vars
-  console.warn('CI mode: dotenv disabled.');
-} else {
+if (!isCI) {
+  // Lokalno – koristimo .env.local
   dotenv.config({ path: '.env.local' });
+} else {
+  console.warn('CI mode: dotenv disabled.');
 }
 
 const PORT = Number(process.env.PORT ?? 3000);
@@ -49,11 +49,4 @@ export default defineConfig({
       retries: isCI ? 1 : 0,
     },
   ],
-
-  webServer: {
-    command: isCI ? `HOST=127.0.0.1 pnpm next start --port ${PORT}` : `pnpm dev --port ${PORT}`,
-    url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: true,
-    timeout: 120000,
-  },
 });

@@ -14,55 +14,43 @@ on:
 
 # This section defines the jobs for this workflow
 jobs:
-  # First job: build and type-check
   build:
-    # Use an Ubuntu Linux runner
     runs-on: ubuntu-latest
     env:
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
 
-    # Steps for the build job
     steps:
-      # Step: checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step: setup Node.js runtime
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Use Node.js version 20
           node-version: 20
 
-      # Step: install pnpm package manager
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          # Use pnpm version 8
           version: 8
 
-      # Step: install project dependencies
       - name: Install dependencies
-        # Run pnpm install to restore node_modules
         run: pnpm install
 
       - name: Build (Next.js production build)
         run: pnpm next build
 
-      # Step: run TypeScript type-check to validate the build
       - name: Type check (build validation)
-        # Use tsc in noEmit mode so we only validate types
         run: pnpm tsc --noEmit
 
   test:
     needs: build
     runs-on: ubuntu-latest
-
     env:
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
       PORT: 3000
+      BASE_URL: http://127.0.0.1:3000
 
     steps:
       - name: Checkout repository
@@ -96,20 +84,28 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      # Build za Next start u webServer-u
-      - name: Build Next app for Playwright
+      - name: Clean Next artifacts
+        run: rm -rf .next
+
+      - name: Build Next app
         run: pnpm next build
 
-      - name: Debug Next.js server
+      # ⬇⬇⬇ OVO JE JEDINI KO STARTUJE SERVER ⬇⬇⬇
+      - name: Start Next app (background)
         run: |
-          echo "Attempting direct CURL:"
-          curl -v http://127.0.0.1:3000/api/health || true
+          pnpm next start --port 3000 > .next/next.log 2>&1 &
+          echo "Next started with PID $!"
+          npx wait-on --timeout 120000 http://127.0.0.1:3000 || (echo "Next failed to start"; cat .next/next.log; exit 1)
 
       - name: Run Playwright API tests
         run: pnpm test:api
 
       - name: Run Playwright UI tests
         run: pnpm test:ui
+
+      - name: Print Next.js logs on failure
+        if: failure()
+        run: cat .next/next.log
 
       - name: Upload Playwright report on failure
         if: failure()
