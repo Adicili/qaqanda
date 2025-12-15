@@ -72,9 +72,6 @@ jobs:
       - name: Run unit tests
         run: pnpm test:unit
 
-      - name: Run QA meta tests
-        run: pnpm qa:test
-
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
@@ -83,6 +80,9 @@ jobs:
 
       - name: Run Playwright tests (UI)
         run: pnpm test:ui
+
+      - name: Run QA meta tests
+        run: pnpm qa:test
 
       - name: Upload Playwright report on failure
         if: failure()
