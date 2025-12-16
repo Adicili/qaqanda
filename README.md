@@ -1,9 +1,8 @@
 # QAQandA App
 
-Internal QA & Knowledge Management tool built with **Next.js (App Router)**, **TypeScript**, **Databricks SQL Warehouse**, **Vitest**, and **Playwright**.  
-Project follows strict QA-driven development (EP01–EP03) and is structured for CI/CD expansion (EP08).
+![CI Status](https://github.com/<USER>/<REPO>/actions/workflows/ci.yml/badge.svg)
 
----
+## Internal QA & Knowledge Management tool built with **Next.js (App Router)**, **TypeScript**, **Databricks SQL Warehouse**, **Vitest**, and **Playwright**.
 
 # 🧰 Prerequisites
 
@@ -16,10 +15,8 @@ Project follows strict QA-driven development (EP01–EP03) and is structured for
 
 Verify:
 
-```bash
-node -v
+node -v  
 pnpm -v
-```
 
 ---
 
@@ -27,27 +24,19 @@ pnpm -v
 
 ## 1. Install dependencies
 
-```bash
 pnpm install
-```
 
 ## 2. Local Development (Databricks optional)
 
-```bash
 pnpm dev
-```
 
-App starts at:
-
-> http://localhost:3000
+App runs at: http://localhost:3000
 
 If Databricks env vars aren’t provided → repositories fallback to **in-memory storage**.
 
 ## 3. Production build
 
-```bash
 pnpm build && pnpm start
-```
 
 ---
 
@@ -55,11 +44,7 @@ pnpm build && pnpm start
 
 ## Unit tests (fast)
 
-Database repositories and Databricks client API wrapper:
-
-```bash
 pnpm test:unit
-```
 
 Uses Vitest, mocks Databricks API, no external dependencies.
 
@@ -67,24 +52,16 @@ Uses Vitest, mocks Databricks API, no external dependencies.
 
 ## E2E / UI tests (Playwright)
 
-```bash
-pnpm playwright test
-```
+pnpm test:ui
+pnpm test:api
 
 ---
 
 ## Canary DB tests (real Databricks)
 
-**⚠️ Disabled by default. Runs only with valid DEV/STAGING credentials.**
+⚠️ Disabled by default. Runs only with valid DEV/STAGING credentials.
 
-```bash
 pnpm test:canary
-```
-
-- Executes against actual SQL Warehouse
-- Inserts/updates KB documents
-- Validates schema, permissions
-- Blocks release when failing
 
 ---
 
@@ -95,156 +72,156 @@ Every commit must pass:
 - ESLint
 - Prettier
 - TypeScript strict mode
-- Playwright smoke
-- Folder structure
+- Playwright smoke tests
+- Folder structure rules
 - Env schema validation
 
-## Required scripts
+### Required scripts
 
-| Script              | Purpose                        |
-| ------------------- | ------------------------------ |
-| `pnpm lint`         | ESLint                         |
-| `pnpm format`       | Format code                    |
-| `pnpm format:check` | Formatting validation only     |
-| `pnpm test:unit`    | Unit + contract tests          |
-| `pnpm playwright`   | UI/E2E                         |
-| `pnpm qa:test`      | Meta suite for EP02 compliance |
+| Script            | Purpose                        |
+| ----------------- | ------------------------------ |
+| pnpm lint         | ESLint                         |
+| pnpm format       | Format code                    |
+| pnpm format:check | Formatting validation only     |
+| pnpm test:unit    | Unit + contract tests          |
+| pnpm test:ui      | UI/E2E                         |
+| pnpm qa:test      | Meta suite for EP02 compliance |
+
+---
+
+# 🚦 EP08-US01 — Continuous Integration (CI Pipeline)
+
+The project includes a **full CI pipeline** implemented using **GitHub Actions**.
+
+CI runs automatically on:
+
+- every **pull request**
+- every **push** to `main`
+
+### CI Pipeline Steps
+
+1. Checkout repository
+2. Setup Node.js 20 & pnpm
+3. Install dependencies with caching
+4. Run quality gates:
+   - ESLint
+   - TypeScript type-check
+   - Unit tests
+   - Playwright smoke suite
+5. Upload artifacts on failure (screenshots, traces, videos)
+6. Report final CI status (required for merge)
+
+A failing step **blocks merging** to ensure stability and quality.
+
+CI configuration file:
+
+.github/workflows/ci.yml
+
+This completes the implementation of **EP08-US01**.
 
 ---
 
 # 🧱 Project Structure
 
-```
-/app                   → Next.js App Router
-/lib                   → Core utilities
-  ├ databricksClient   → SQL wrapper (EP03)
-  ├ db.users.ts        → Users repository (CRUD)
-  ├ db.kb.ts           → Knowledge Base repository
-  ├ db.queries.ts      → Query Log repository
-/schemas               → DTOs, Zod validation
-/tests
-  /unit                → Repository + client + logging tests
-  /integration         → Canary DB tests (EP03-US04)
-  /ui                  → Playwright
-  /api                 → API controller tests (future EP04)
-```
+/app → Next.js App Router  
+/lib → Core utilities  
+ ├ databricksClient → SQL wrapper (EP03)  
+ ├ db.users.ts → Users repository  
+ ├ db.kb.ts → Knowledge Base repository  
+ ├ db.queries.ts → Query Log repository  
+/schemas → Zod validation  
+/tests  
+ /unit → Repository + client tests  
+ /integration → Canary DB tests  
+ /ui → Playwright E2E tests  
+ /api → Future API-level tests
 
 ---
 
 # 🧩 Databricks Integration (EP03)
 
-Project integrates a **typed Databricks Client**:
+Typed Databricks client providing:
 
-- SQL wrapper:
-  - named parameters (`:email`, `:id`)
-  - secure escaping
-  - timeout & retry strategy
-- Inline JSON result parsing
-- Mapping array-of-arrays → typed records
+- SQL wrapper with named params
+- Secure escaping
+- Timeout & retry
+- Inline JSON parsing
+- Array-of-arrays → typed mapping
 
-## Safe Querying
+### Safe Querying Guarantees
 
-- `executeQuery(sql, params)`
-- No raw string interpolation
-- No unescaped input
-- No sensitive logs
+- No raw SQL interpolation
+- All params validated
+- No secret exposure in logs
 
 ---
 
 # 🗄️ Database Repositories (EP03-US03)
 
-Each domain has its own module:
+Domain-specific modules:
 
-- `db.users.ts`
-  - `getUserByEmail(email)`
-  - `create(user)`
-  - `listAll()`
+- Users
+- Knowledge Base
+- Query logs
 
-- `db.kb.ts`
-  - `getById(id)`
-  - `addDoc(title, text, tags)`
-  - `updateDoc(id, newText)`
-  - `listAll()`
-
-- `db.queries.ts`
-  - `insertQuery(userId, question, latency)`
-  - `getRecentByUser(userId)`
-
-**No repository talks to Databricks directly — everything goes through `databricksClient`.**
-
-Fallback:
-
-- When ENV is not configured → in-memory storage
+All repositories use `databricksClient`.  
+If ENV is missing → **automatic in-memory fallback**.
 
 ---
 
-# 🧪 EP03 — Tests
+# 🧪 EP03 — Tests Overview
 
-## Unit / Contract coverage
+- CRUD repository tests
+- SQL parameterization
+- Retry + timeout handling
+- Schema mapping
+- Sensitive logging prevention
 
-- Repository CRUD
-- Parameterized SQL usage
-- Databricks wrapper behaviors
-- Retry / Timeout / HTTP errors
-- Mapping result schema
-- Sensitive logging check
-
-Everything mocks the Databricks network and ENV.
+Mocks ensure deterministic execution.
 
 ---
 
 # 🛡️ Canary Testing (EP03-US04)
 
-Canary suite hits **real SQL Warehouse**:
+Optional integration suite hitting real Databricks Warehouse:
 
-- Insert KB doc
-- Read back
-- Update KB doc
-- Read updated
-- Validate column types
-- Validate permission boundaries
-  - READ-ONLY → fails on INSERT/UPDATE
-  - READ-WRITE → succeeds
+- Insert → read → update KB docs
+- Validate permissions
+- Validate schema integrity
 
-**Skipped on PR CI. Run manually or scheduled.**
+Skipped in CI; executed manually or scheduled.
 
 ---
 
 # 🔐 Environment
 
-## `.env.local` or `.env.development`
-
-```
-SESSION_SECRET="---"
-DATABRICKS_HOST="https://XXX.databricks.cloud"
-DATABRICKS_TOKEN="dapiXXXX"
+SESSION_SECRET="---"  
+DATABRICKS_HOST="https://XXX.databricks.cloud"  
+DATABRICKS_TOKEN="dapiXXXX"  
 DATABRICKS_WAREHOUSE_ID="XXXX"
-```
 
-If missing → repositories switch to in-memory mode.
-
-> No credentials in repo. No logs of SQL or secrets.
+Missing ENV → in-memory DB fallback.  
+No credentials logged by design.
 
 ---
 
 # 💡 Runbook
 
-| Command             | Description              |
-| ------------------- | ------------------------ |
-| `pnpm dev`          | Local dev server         |
-| `pnpm build`        | Production build         |
-| `pnpm test:unit`    | Unit + repositories      |
-| `pnpm playwright`   | UI regression suite      |
-| `pnpm test:canary`  | 🔥 LIVE Databricks tests |
-| `pnpm lint`         | ESLint                   |
-| `pnpm format`       | Format code              |
-| `pnpm tsc --noEmit` | Strict typing            |
+pnpm dev — Local server  
+pnpm build — Production build  
+pnpm test:unit — Unit + repository tests  
+pnpm playwright — Full UI suite  
+pnpm test:canary — Live Databricks tests  
+pnpm lint — ESLint  
+pnpm format — Prettier  
+pnpm tsc --noEmit — Strict TypeScript checking
 
 ---
 
 # 📘 Notes
 
-- Code is QA-led, not “feature led”.
-- Databricks access layer is fully typed and segregated.
-- Canary tests block unsafe releases.
-- EP08 will integrate CI/CD pipelines with gated stages.
+- Architecture is **QA-first**, not feature-first
+- Strong typing and DB abstraction
+- Integrated CI pipeline ensures baseline quality
+- Canary tests prevent DB contract regressions
+- Ideal for **QA Automation Portfolio**
