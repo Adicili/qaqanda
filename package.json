@@ -14,16 +14,16 @@
     "qa:test:watch": "vitest",
     "test:unit": "vitest run --config vitest.unit.config.ts --reporter=verbose",
     "test:unit:watch": "vitest --config vitest.unit.config.ts",
-    "test:db": "vitest run --config vitest.db.config.ts --reporter=verbose",
-    "test:canary": "vitest run --config vitest.canary.config.ts",
-    "test:canary:rw": "DATABRICKS_CANARY_ENABLED=true vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose",
-    "test:canary:ro": "DATABRICKS_CANARY_ENABLED=true DATABRICKS_TOKEN=$DATABRICKS_RO_TOKEN vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose",
-    "test": "playwright test",
     "test:ui": "playwright test --project=ui",
     "test:api": "playwright test --project=api",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
-    "seed:databricks": "cross-env DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/seedDatabricks.ts"
+    "seed:databricks": "cross-env USE_DATABRICKS_MOCK=false DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/seedDatabricks.ts",
+    "test:db": "vitest run --config vitest.db.config.ts --reporter=verbose",
+    "test:seed:db": "cross-env DATABRICKS_SEED_TESTS_ENABLED=true USE_DATABRICKS_MOCK=false vitest run --config vitest.db.config.ts --reporter=verbose",
+    "test:canary": "vitest run --config vitest.canary.config.ts",
+    "test:canary:rw": "cross-env DATABRICKS_CANARY_ENABLED=true USE_DATABRICKS_MOCK=false vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose",
+    "test:canary:ro": "cross-env DATABRICKS_CANARY_ENABLED=true USE_DATABRICKS_MOCK=false vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,css,md}": [

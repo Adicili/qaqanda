@@ -273,16 +273,34 @@ function extractErrorMessage(payload: DatabricksSqlResponse): string {
 function mapResult<T = Record<string, unknown>>(json: any): T[] {
   const result = json?.result ?? json;
 
-  // 1) Format: result.data is already an array of objects { c: 2, ... }
-  if (Array.isArray(result?.data) && result.data.length > 0 && typeof result.data[0] === 'object') {
+  // 1) result.data already objects
+  if (
+    Array.isArray(result?.data) &&
+    result.data.length > 0 &&
+    typeof result.data[0] === 'object' &&
+    !Array.isArray(result.data[0])
+  ) {
     return result.data as T[];
   }
 
-  // 2) Generalized array-of-arrays format
+  // columns can be in result.schema OR manifest.schema
   const columns =
     result?.schema?.columns ?? json?.schema?.columns ?? json?.manifest?.schema?.columns;
 
-  const dataArray = result?.data_array ?? json?.data_array;
+  // data can be in result.data_array OR result.data (as array-of-arrays)
+  let dataArray: unknown[][] | null = null;
+
+  if (Array.isArray(result?.data_array)) {
+    dataArray = result.data_array as unknown[][];
+  } else if (Array.isArray(json?.data_array)) {
+    dataArray = json.data_array as unknown[][];
+  } else if (
+    Array.isArray(result?.data) &&
+    result.data.length > 0 &&
+    Array.isArray(result.data[0])
+  ) {
+    dataArray = result.data as unknown[][];
+  }
 
   if (Array.isArray(dataArray) && Array.isArray(columns)) {
     const colNames = columns.map((c: any) => c.name);
