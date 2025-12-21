@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { ensureEngineerUser } from '../support/users';
 
 import { LoginPage } from './pages/LoginPage';
-import { HomePage } from './pages/HomePage';
+import { AskPage } from './pages/AskPage';
 
 import { ENV } from '@/lib/env';
 
@@ -91,7 +91,7 @@ test.describe('EP02-US02 - Login & Session Cookie (API)', () => {
       );
     const { email, password } = await ensureEngineerUser(request);
     const loginPage = new LoginPage(page);
-    const homePage = new HomePage(page);
+    const askPage = new AskPage(page);
 
     // Open login page
     await loginPage.open(BASE_URL);
@@ -104,7 +104,7 @@ test.describe('EP02-US02 - Login & Session Cookie (API)', () => {
     await expect(page).toHaveURL(`${BASE_URL}/`);
 
     // Home title is visible
-    await expect(homePage.title).toBeVisible();
+    await expect(askPage.title).toBeVisible();
 
     // Login error banner is not displayed
     await expect(loginPage.pageError).toBeHidden();
