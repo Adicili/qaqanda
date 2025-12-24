@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { ensureEngineerUser, loginAndGetSessionCookie } from '../support/users';
+import { ensureEngineerUser, loginAndGetSessionCookie } from '../support/auth-api';
 
 test.describe('EP04-US02 — /api/ask', () => {
   test('EP04-US02-TC01 — Authenticated request returns answer + context + latency', async ({
