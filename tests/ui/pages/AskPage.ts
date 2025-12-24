@@ -7,6 +7,7 @@ export class AskPage extends BasePage {
   readonly askInput: Locator;
   readonly askSubmit: Locator;
   readonly askAnswer: Locator;
+  readonly askError: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -15,6 +16,7 @@ export class AskPage extends BasePage {
     this.askInput = this.locator('ask-input');
     this.askSubmit = this.locator('ask-submit');
     this.askAnswer = this.locator('ask-answer');
+    this.askError = this.locator('ask-error');
   }
 
   // --- ACTIONS ---
@@ -32,5 +34,9 @@ export class AskPage extends BasePage {
 
   async askAnswerText() {
     return this.askAnswer.textContent();
+  }
+
+  async askErrorText() {
+    return this.askError.textContent();
   }
 }
