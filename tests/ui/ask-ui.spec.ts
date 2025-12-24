@@ -57,4 +57,40 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
 
     expect(askError).toMatch('Question is required');
   });
+
+  test('EP04-US03-TC03 - backend 400 surfaced cleanly', async ({ page, request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP04-US03-TC03' },
+        { type: 'doc', description: 'docs/TESTING/EP04/Test_Cases_EP04.md' },
+        { type: 'us', description: 'EP04-US03' },
+      );
+
+    const askPage = new AskPage(page);
+
+    const creds = await ensureEngineerUser(request);
+    const sessionCookie = await loginAndGetSessionCookie(request, creds);
+    await injectSessionCookie(page, sessionCookie, BASE_URL);
+
+    await askPage.open(BASE_URL);
+
+    await page.route('**/api/ask', async (route) => {
+      await route.fulfill({
+        status: 400,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Invalid question',
+        }),
+      });
+    });
+
+    await askPage.enterQuestion('trigger backend error');
+
+    await askPage.submit();
+
+    const askError = await askPage.askErrorText();
+
+    expect(askError).toMatch('Invalid question');
+  });
 });
