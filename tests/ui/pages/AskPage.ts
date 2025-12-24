@@ -39,4 +39,8 @@ export class AskPage extends BasePage {
   async askErrorText() {
     return this.askError.textContent();
   }
+
+  async submitButtonText() {
+    return this.askSubmit.textContent();
+  }
 }

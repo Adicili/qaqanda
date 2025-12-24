@@ -93,4 +93,52 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
 
     expect(askError).toMatch('Invalid question');
   });
+
+  test('EP04-US03-TC04 — backend 500 shows generic error', async ({ page, request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP04-US03-TC04' },
+        { type: 'doc', description: 'docs/TESTING/EP04/Test_Cases_EP04.md' },
+        { type: 'us', description: 'EP04-US03' },
+      );
+
+    const askPage = new AskPage(page);
+
+    const creds = await ensureEngineerUser(request);
+    const sessionCookie = await loginAndGetSessionCookie(request, creds);
+    await injectSessionCookie(page, sessionCookie, BASE_URL);
+
+    await askPage.open(BASE_URL);
+
+    await page.route('**/api/ask', async (route) => {
+      await new Promise((r) => setTimeout(r, 1000));
+
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: 'Internal server error',
+        }),
+      });
+    });
+
+    await askPage.enterQuestion('trigger 500');
+
+    await askPage.submit();
+
+    const submitButtonDisabled = await askPage.submitButtonText();
+
+    await expect(askPage.askSubmit).toBeDisabled();
+    expect(submitButtonDisabled).toContain('Loading');
+
+    const askError = await askPage.askErrorText();
+    expect(askError).toMatch('Internal server error');
+
+    await expect(askPage.askSubmit).toBeEnabled();
+
+    const submitButtonEnabled = await askPage.submitButtonText();
+
+    expect(submitButtonEnabled).toMatch('Ask');
+  });
 });
