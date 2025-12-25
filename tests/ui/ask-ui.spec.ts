@@ -190,4 +190,49 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     await expect(askPage.askInput).toHaveCount(0);
     await expect(askPage.askSubmit).toHaveCount(0);
   });
+
+  test('EP04-US03-TC07 — basic a11y on Ask page', async ({ page, request }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP04-US03-TC07' },
+        { type: 'doc', description: 'docs/TESTING/EP04/Test_Cases_EP04.md' },
+        { type: 'us', description: 'EP04-US03' },
+      );
+
+    const askPage = new AskPage(page);
+
+    const creds = await ensureEngineerUser(request);
+    const sessionCookie = await loginAndGetSessionCookie(request, creds);
+    await injectSessionCookie(page, sessionCookie, BASE_URL);
+
+    let hit = 0;
+    await page.route('**/api/ask', async (route) => {
+      hit++;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          answer: 'Hello from mocked backend',
+          context: [],
+          latency_ms: 10,
+        }),
+      });
+    });
+
+    await askPage.open(BASE_URL);
+
+    await page.keyboard.press('Tab');
+    await expect(askPage.askInput).toBeFocused();
+
+    await askPage.enterQuestion('what is our DoD');
+
+    await askPage.askInput.press('Enter');
+
+    await expect.poll(() => hit).toBeGreaterThan(0);
+
+    const askAnswer = await askPage.askAnswerText();
+
+    expect(askAnswer).toMatch('Hello from mocked backend');
+  });
 });
