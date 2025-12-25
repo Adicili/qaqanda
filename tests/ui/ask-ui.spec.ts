@@ -4,8 +4,9 @@ import { ensureEngineerUser, loginAndGetSessionCookie } from '../support/auth-ap
 import { injectSessionCookie } from '../support/auth-ui';
 
 import { AskPage } from './pages/AskPage';
+import { HomePage } from './pages/HomePage';
 
-const BASE_URL = 'http://localhost:3000';
+const BASE_URL = 'http://localhost:3000/';
 
 test.describe('EP04-US03 - Ask UI Page (UI)', () => {
   test('EP04-US03-TC01 - Ask flow happy path', async ({ page, request }) => {
@@ -165,5 +166,28 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     await expect(askPage.askSubmit).toBeEnabled();
     const submitButtonEnabled = await askPage.submitButtonText();
     expect(submitButtonEnabled).toMatch('Ask');
+  });
+
+  test('EP04-US03-TC06 — / requires auth', async ({ page }) => {
+    test
+      .info()
+      .annotations.push(
+        { type: 'testcase', description: 'EP04-US03-TC06' },
+        { type: 'doc', description: 'docs/TESTING/EP04/Test_Cases_EP04.md' },
+        { type: 'us', description: 'EP04-US03' },
+      );
+
+    const askPage = new AskPage(page);
+    const landingPage = new HomePage(page);
+
+    await askPage.open(BASE_URL);
+
+    await expect(landingPage.title).toBeVisible();
+    await expect(landingPage.registerLink).toBeVisible();
+    await expect(landingPage.loginLink).toBeVisible();
+
+    await expect(askPage.title).toHaveCount(0);
+    await expect(askPage.askInput).toHaveCount(0);
+    await expect(askPage.askSubmit).toHaveCount(0);
   });
 });
