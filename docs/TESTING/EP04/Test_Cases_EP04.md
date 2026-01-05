@@ -571,19 +571,20 @@ Validate UX feedback while the request is in progress.
 
 ### EP04-US03-TC06
 
-- **Test name:** Unauthenticated user redirected from `/` to `/login`
-- **Type:** UI / Auth Guard
+- **Test name:** Unauthenticated user sees Landing page instead of Ask page
+- **Type:** UI / Auth Guard (server-side rendering)
 - **Priority:** P0
 - **Automate:** Yes
 - **Automation:**
   - Framework: Playwright UI tests
-  - Spec file: `tests/ui/auth-guard-ui.spec.ts`
-  - Test name: `EP04-US03-TC06 — / requires auth`
+  - Spec file: `tests/ui/ask-ui.spec.ts`
+  - Test name: `EP04-US03-TC06 — unauthenticated user sees landing`
   - Command:  
     `pnpm test:ui -- -g "EP04-US03-TC06"`
 
 **Description:**  
-Confirm that Ask page is protected and not accessible to anonymous users.
+Verify that the Ask page is protected and that anonymous users are not shown the Ask UI.  
+When no valid session cookie is present, the application renders the public Landing page instead of the Ask interface.
 
 **Steps:**
 
@@ -592,8 +593,9 @@ Confirm that Ask page is protected and not accessible to anonymous users.
 
 **Expected Result:**
 
-- Browser is redirected to `/login`.
-- Ask page content is not visible without authentication.
+- Landing page content is rendered (title and Register/Login CTAs are visible).
+- Ask page UI elements (question input, submit button, answer/context sections) are not rendered.
+- No redirect occurs; access control is enforced via server-side conditional rendering.
 
 ---
 
