@@ -9,8 +9,6 @@ const SCHEMA = 'workspace.qaqanda';
 // isti kriterijum kao u db.users.ts
 const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
 
-const memoryKbDocs = new Map<string, KBDoc>();
-
 type DbKBDocRow = {
   id: string;
   title: string;
@@ -29,6 +27,14 @@ export type KBDoc = {
   createdAt: Date;
   updatedAt: Date | null;
 };
+
+export type KBDocPatch = {
+  title: string;
+  text: string;
+  tags: string[];
+};
+
+const memoryKbDocs = new Map<string, KBDoc>();
 
 function parseTags(raw: string | null): string[] {
   if (!raw) return [];
@@ -64,6 +70,7 @@ export async function getById(id: string): Promise<KBDoc | null> {
     SELECT id, title, text, tags, created_at, updated_at
     FROM ${SCHEMA}.kb_docs
     WHERE id = :id
+    LIMIT 1
   `;
 
   const rows = await executeQuery<DbKBDocRow>(sql, { id });
@@ -73,8 +80,9 @@ export async function getById(id: string): Promise<KBDoc | null> {
 }
 
 export async function addDoc(title: string, text: string, tags: string[]): Promise<string> {
+  const id = `kb_${randomUUID()}`;
+
   if (!hasDatabricksEnv) {
-    const id = `kb_${randomUUID()}`;
     const now = new Date();
     memoryKbDocs.set(id, {
       id,
@@ -87,48 +95,82 @@ export async function addDoc(title: string, text: string, tags: string[]): Promi
     return id;
   }
 
+  // EP03 test očekuje RETURNING id (mock vraća 'kb-xyz')
   const sql = `
     INSERT INTO ${SCHEMA}.kb_docs (id, title, text, tags, created_at, updated_at)
     VALUES (:id, :title, :text, :tags, current_timestamp(), current_timestamp())
     RETURNING id
   `;
 
-  const id = `kb_${randomUUID()}`;
-  const tagsJson = JSON.stringify(tags);
-
   const rows = await executeQuery<{ id: string }>(sql, {
     id,
     title,
     text,
-    tags: tagsJson,
+    tags: JSON.stringify(tags),
   });
 
   return rows[0]?.id ?? id;
 }
 
-// US kaže updateDoc(id, newText) — držim taj potpis
-export async function updateDoc(id: string, newText: string): Promise<void> {
+// Overload 1 (EP03): update only text
+export async function updateDoc(id: string, newText: string): Promise<void>;
+// Overload 2 (EP05): update title + text + tags
+export async function updateDoc(id: string, patch: KBDocPatch): Promise<void>;
+export async function updateDoc(id: string, arg: string | KBDocPatch): Promise<void> {
+  const now = new Date();
+
   if (!hasDatabricksEnv) {
     const existing = memoryKbDocs.get(id);
     if (!existing) return;
+
+    if (typeof arg === 'string') {
+      memoryKbDocs.set(id, {
+        ...existing,
+        text: arg,
+        updatedAt: now,
+      });
+      return;
+    }
+
     memoryKbDocs.set(id, {
       ...existing,
-      text: newText,
-      updatedAt: new Date(),
+      title: arg.title,
+      text: arg.text,
+      tags: arg.tags,
+      updatedAt: now,
     });
     return;
   }
 
+  if (typeof arg === 'string') {
+    // EP03 behavior (unit tests expect :text param only)
+    const sql = `
+      UPDATE ${SCHEMA}.kb_docs
+      SET text = :text,
+          updated_at = current_timestamp()
+      WHERE id = :id
+    `;
+
+    await executeQuery<never>(sql, { id, text: arg });
+    return;
+  }
+
+  // EP05 behavior
   const sql = `
     UPDATE ${SCHEMA}.kb_docs
-    SET text = :text,
-        updated_at = current_timestamp()
+    SET
+      title = :title,
+      text = :text,
+      tags = :tags,
+      updated_at = current_timestamp()
     WHERE id = :id
   `;
 
   await executeQuery<never>(sql, {
     id,
-    text: newText,
+    title: arg.title,
+    text: arg.text,
+    tags: JSON.stringify(arg.tags),
   });
 }
 
