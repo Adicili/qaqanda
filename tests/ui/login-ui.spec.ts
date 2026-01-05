@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { ensureEngineerUser } from '../support/users';
+import { ensureEngineerUser } from '../support/auth-api';
 
 import { LoginPage } from './pages/LoginPage';
 import { AskPage } from './pages/AskPage';

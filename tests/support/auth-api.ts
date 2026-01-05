@@ -1,5 +1,6 @@
-// tests/support/users.ts
 import { expect } from '@playwright/test';
+
+import { extractCookieFromSetCookie } from './cookies';
 
 import { ENV } from '@/lib/env';
 
@@ -15,23 +16,6 @@ export async function ensureEngineerUser(request: any) {
 
   expect([200, 409]).toContain(r.status());
   return { email, password };
-}
-
-export async function getLeadCredentials() {
-  return {
-    email: 'lead@example.com',
-    password: 'Passw0rd!',
-  };
-}
-
-function extractCookieFromSetCookie(setCookieHeader: unknown, cookieName: string): string | null {
-  const raw = String(setCookieHeader ?? '');
-  const idx = raw.indexOf(`${cookieName}=`);
-  if (idx === -1) return null;
-
-  const slice = raw.slice(idx);
-  const firstPart = slice.split(';')[0]?.trim(); // "name=value"
-  return firstPart || null;
 }
 
 export async function loginAndGetSessionCookie(

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
-import { ensureEngineerUser, getLeadCredentials } from '../support/users';
+import { ensureEngineerUser } from '../support/auth-api';
+import { getLeadCredentials } from '../support/creds';
 
 import { ENV } from '@/lib/env';
 import { SESSION_COOKIE_NAME } from '@/lib/session';

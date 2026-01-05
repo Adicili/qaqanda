@@ -5,12 +5,14 @@ import { BasePage } from './BasePage';
 export class HomePage extends BasePage {
   readonly title: Locator;
   readonly registerLink: Locator;
+  readonly loginLink: Locator;
 
   constructor(page: Page) {
     super(page);
 
     this.title = this.locator('home-title');
     this.registerLink = this.locator('home-register-link');
+    this.loginLink = this.locator('home-login-link');
   }
 
   // --- ACTIONS ---
