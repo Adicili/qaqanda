@@ -13,6 +13,9 @@ const baseSchema = z.object({
   PORT: z.coerce.number().int().positive().optional(),
   BASE_URL: z.string().default('http://localhost:3000'),
 
+  LLM_MODE: z.enum(['mock', 'real']).default('mock'),
+  MOCK_LLM_BAD: z.coerce.boolean().default(false),
+
   CI: z
     .union([z.string(), z.boolean(), z.number()])
     .transform((v) => {
@@ -76,6 +79,8 @@ export const ENV = {
   PORT: env.PORT,
   BASE_URL: env.BASE_URL,
   CI: env.CI,
+  LLM_MODE: env.LLM_MODE,
+  MOCK_LLM_BAD: env.MOCK_LLM_BAD,
   EXPECTED_TITLE: env.EXPECTED_TITLE,
   SESSION_SECRET: env.SESSION_SECRET,
   USE_DATABRICKS_MOCK: env.USE_DATABRICKS_MOCK,
