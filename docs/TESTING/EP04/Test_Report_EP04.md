@@ -296,3 +296,151 @@ US02 is **fully implemented and correctly tested** at appropriate layers.
 This epic is **done** and safe to ship.
 
 ---
+
+# Test Report — EP04-US03 (Ask UI Page)
+
+## Epic
+
+**EP04 — Ask Engine & UI**
+
+## User Story
+
+**EP04-US03 — Ask UI Page (`/`)**
+
+As a logged-in user, I want to ask a question and see relevant answers and document context directly in the web interface.
+
+---
+
+## Scope
+
+This report covers **UI-level validation** of the Ask page, including:
+
+- Auth guard behavior
+- Happy-path ask flow
+- Client-side validation
+- Backend error surfacing (400 / 500)
+- Loading state UX
+- Basic accessibility (keyboard usage)
+
+All tests were implemented using **Playwright UI tests** with API-based authentication setup.
+
+---
+
+## Test Environment
+
+- **Framework:** Playwright
+- **Browser:** Chromium (Desktop)
+- **Auth Strategy:** API login + session cookie injection
+- **Backend Mode:** In-memory / mocked responses for error cases
+- **Base URL:** `http://localhost:3000`
+
+---
+
+## Test Cases Summary
+
+| Test Case ID   | Name                               | Priority | Status    |
+| -------------- | ---------------------------------- | -------- | --------- |
+| EP04-US03-TC01 | Ask flow happy path                | P0       | ✅ Passed |
+| EP04-US03-TC02 | Empty input client-side validation | P1       | ✅ Passed |
+| EP04-US03-TC03 | Backend 400 surfaced cleanly       | P1       | ✅ Passed |
+| EP04-US03-TC04 | Backend 500 shows generic error    | P1       | ✅ Passed |
+| EP04-US03-TC05 | Loading indicator behavior         | P2       | ✅ Passed |
+| EP04-US03-TC06 | `/` requires authentication        | P0       | ✅ Passed |
+| EP04-US03-TC07 | Keyboard & basic accessibility     | P3       | ✅ Passed |
+
+---
+
+## Detailed Results
+
+### EP04-US03-TC01 — Ask flow happy path
+
+**Result:** ✅ Passed
+
+- Authenticated user can access Ask page.
+- Submitting a valid question returns an answer.
+- Empty context is handled gracefully (“No relevant knowledge”).
+
+---
+
+### EP04-US03-TC02 — Empty input client-side validation
+
+**Result:** ✅ Passed
+
+- Submitting with empty input does not trigger network request.
+- Inline validation message is displayed.
+- Answer/context areas remain unchanged.
+
+---
+
+### EP04-US03-TC03 — Backend 400 surfaced cleanly
+
+**Result:** ✅ Passed
+
+- Backend `400` response is mocked.
+- UI displays a clear, non-technical error message.
+- No raw JSON or stack trace is exposed.
+
+---
+
+### EP04-US03-TC04 — Backend 500 shows generic error
+
+**Result:** ✅ Passed
+
+- Backend `500` response is mocked.
+- Generic error banner is displayed.
+- Loading indicator is hidden after failure.
+- UI remains stable with no partial data rendered.
+
+---
+
+### EP04-US03-TC05 — Loading indicator behavior
+
+**Result:** ✅ Passed
+
+- Submit button shows `Loading…` state during request.
+- Button is disabled while loading.
+- Loading indicator disappears after response.
+- User can submit again after completion.
+
+---
+
+### EP04-US03-TC06 — `/` requires authentication
+
+**Result:** ✅ Passed
+
+- Anonymous user navigating to `/` sees Landing page.
+- Ask UI elements are not rendered without a valid session.
+- Register and Login CTAs are visible instead.
+
+---
+
+### EP04-US03-TC07 — Keyboard & basic accessibility
+
+**Result:** ✅ Passed
+
+- Question input is reachable via keyboard (Tab).
+- Pressing Enter triggers form submission.
+- Ask flow works without mouse interaction.
+- Answer and error regions are accessible via semantic roles.
+
+---
+
+## Risks & Notes
+
+- Full WCAG compliance is **out of scope** for this epic.
+- Screen-reader testing is partially manual.
+- Auth is tested via session cookie injection, not UI login flow (intentional, for speed and stability).
+
+---
+
+## Overall Assessment
+
+✅ **EP04-US03 is functionally complete and stable.**
+
+- Core user flows validated
+- Error handling robust
+- UX feedback (loading, errors) behaves correctly
+- Auth guard properly enforced
+- Architecture supports scalable UI testing
+
+**Ready for integration and demo.**
