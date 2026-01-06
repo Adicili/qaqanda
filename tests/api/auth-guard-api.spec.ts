@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { ensureEngineerUser } from '../support/auth-api';
-import { getLeadCredentials } from '../support/creds';
+import { ensureUser } from '../support/auth-api';
 
 import { ENV } from '@/lib/env';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
@@ -46,7 +45,7 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection', () => {
         { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
         { type: 'us', description: 'EP02-US03' },
       );
-    const { email, password } = await ensureEngineerUser(request);
+    const { email, password } = await ensureUser(request, 'ENGINEER');
 
     const login = await request.post(LOGIN_ENDPOINT, {
       data: { email, password },
@@ -78,7 +77,7 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection', () => {
         description: 'Requires real /kb UI and persistent ENGINEER/LEAD roles (EP03/EP05)',
       },
     );
-    const { email, password } = await getLeadCredentials();
+    const { email, password } = await ensureUser(request, 'LEAD');
 
     const login = await request.post(LOGIN_ENDPOINT, {
       data: { email, password },

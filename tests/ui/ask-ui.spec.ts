@@ -8,7 +8,7 @@ import { ENV } from '@/lib/env';
 const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
 
 test.describe('EP04-US03 - Ask UI Page (UI)', () => {
-  test('EP04-US03-TC01 - Ask flow happy path', async ({ authedPage }) => {
+  test('EP04-US03-TC01 - Ask flow happy path', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -17,7 +17,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
         { type: 'us', description: 'EP04-US03' },
       );
 
-    const askPage = new AskPage(authedPage);
+    const askPage = new AskPage(authedEngineerPage);
 
     await askPage.open(BASE_URL);
 
@@ -30,7 +30,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     expect(askAnswer).toContain('No relevant knowledge');
   });
 
-  test('EP04-US03-TC02 -  empty input validation', async ({ authedPage }) => {
+  test('EP04-US03-TC02 -  empty input validation', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -39,7 +39,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
         { type: 'us', description: 'EP04-US03' },
       );
 
-    const askPage = new AskPage(authedPage);
+    const askPage = new AskPage(authedEngineerPage);
 
     await askPage.open(BASE_URL);
 
@@ -50,7 +50,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     expect(askError).toMatch('Question is required');
   });
 
-  test('EP04-US03-TC03 - backend 400 surfaced cleanly', async ({ authedPage }) => {
+  test('EP04-US03-TC03 - backend 400 surfaced cleanly', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -59,9 +59,9 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
         { type: 'us', description: 'EP04-US03' },
       );
 
-    const askPage = new AskPage(authedPage);
+    const askPage = new AskPage(authedEngineerPage);
 
-    await authedPage.route('**/api/ask', async (route) => {
+    await authedEngineerPage.route('**/api/ask', async (route) => {
       await route.fulfill({
         status: 400,
         contentType: 'application/json',
@@ -82,7 +82,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     expect(askError).toMatch('Invalid question');
   });
 
-  test('EP04-US03-TC04 — backend 500 shows generic error', async ({ authedPage }) => {
+  test('EP04-US03-TC04 — backend 500 shows generic error', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -91,9 +91,9 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
         { type: 'us', description: 'EP04-US03' },
       );
 
-    const askPage = new AskPage(authedPage);
+    const askPage = new AskPage(authedEngineerPage);
 
-    await authedPage.route('**/api/ask', async (route) => {
+    await authedEngineerPage.route('**/api/ask', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -113,7 +113,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     expect(askError).toMatch('Internal server error');
   });
 
-  test('EP04-US03-TC05 — loading indicator behavior', async ({ authedPage }) => {
+  test('EP04-US03-TC05 — loading indicator behavior', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -122,11 +122,11 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
         { type: 'us', description: 'EP04-US03' },
       );
 
-    const askPage = new AskPage(authedPage);
+    const askPage = new AskPage(authedEngineerPage);
 
     await askPage.open(BASE_URL);
 
-    await authedPage.route('**/api/ask', async (route) => {
+    await authedEngineerPage.route('**/api/ask', async (route) => {
       await new Promise((r) => setTimeout(r, 1000));
       await route.fulfill({
         status: 200,
@@ -170,7 +170,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     await expect(askPage.askSubmit).toHaveCount(0);
   });
 
-  test('EP04-US03-TC07 — basic a11y on Ask page', async ({ authedPage }) => {
+  test('EP04-US03-TC07 — basic a11y on Ask page', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -179,10 +179,10 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
         { type: 'us', description: 'EP04-US03' },
       );
 
-    const askPage = new AskPage(authedPage);
+    const askPage = new AskPage(authedEngineerPage);
 
     let hit = 0;
-    await authedPage.route('**/api/ask', async (route) => {
+    await authedEngineerPage.route('**/api/ask', async (route) => {
       hit++;
       await route.fulfill({
         status: 200,
@@ -197,7 +197,7 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
 
     await askPage.open(BASE_URL);
 
-    await authedPage.keyboard.press('Tab');
+    await authedEngineerPage.keyboard.press('Tab');
     await expect(askPage.askInput).toBeFocused();
 
     await askPage.enterQuestion('what is our DoD');
