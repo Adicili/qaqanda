@@ -1,4 +1,4 @@
-import { expect, test } from '../support/fixtures';
+import { expect, test } from '../support/test-fixtures';
 
 import { AskPage } from './pages/AskPage';
 import { HomePage } from './pages/HomePage';

@@ -121,6 +121,17 @@ async function listAllDatabricks(): Promise<DbUser[]> {
   }));
 }
 
+async function updateRoleByEmailDatabricks(email: string, role: UserRole): Promise<void> {
+  await executeQuery(
+    `
+      UPDATE ${SCHEMA}.users
+      SET role = :role
+      WHERE email = :email
+    `,
+    { email, role },
+  );
+}
+
 /**
  * -------------------------
  * In-memory fallback storage
@@ -165,6 +176,17 @@ async function listAllMemory(): Promise<DbUser[]> {
   );
 }
 
+async function updateRoleByEmailMemory(email: string, role: UserRole): Promise<void> {
+  const target = email.toLowerCase();
+
+  for (const [id, user] of memoryUsers.entries()) {
+    if (user.email.toLowerCase() === target) {
+      memoryUsers.set(id, { ...user, role });
+      return;
+    }
+  }
+}
+
 /**
  * -------------------------
  * Public API
@@ -196,10 +218,18 @@ async function listAll(): Promise<DbUser[]> {
   return listAllMemory();
 }
 
+async function updateRoleByEmail(email: string, role: UserRole): Promise<void> {
+  if (useDatabricks) {
+    return updateRoleByEmailDatabricks(email, role);
+  }
+  return updateRoleByEmailMemory(email, role);
+}
+
 export const dbUsers = {
   getUserByEmail,
   create,
   listAll,
+  updateRoleByEmail,
 };
 
-export { getUserByEmail, create, listAll };
+export { getUserByEmail, create, listAll, updateRoleByEmail };

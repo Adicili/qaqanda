@@ -1,39 +1,50 @@
+// tests/support/auth-api.ts
 import { expect } from '@playwright/test';
+
+import { TEST_USERS, type TestUserRole } from '../fixtures/test-users';
 
 import { extractCookieFromSetCookie } from './cookies';
 
-import { ENV } from '@/lib/env';
+const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 
-const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
+const REGISTER_ENDPOINT = `${BASE_URL}/api/auth/register`;
+const LOGIN_ENDPOINT = `${BASE_URL}/api/auth/login`;
 
-export async function ensureEngineerUser(request: any) {
-  const email = 'engineer@example.com';
-  const password = 'Passw0rd!';
+export async function ensureUser(request: any, role: TestUserRole) {
+  const user = TEST_USERS[role];
 
-  const r = await request.post(`${BASE_URL}/api/auth/register`, {
-    data: { email, password, confirmPassword: password },
+  const res = await request.post(REGISTER_ENDPOINT, {
+    data: {
+      email: user.email,
+      password: user.password,
+      confirmPassword: user.password,
+      // IMPORTANT:
+      // This assumes your backend supports role assignment on register.
+      // If it DOES NOT, you must add a test-only seed mechanism later.
+      role: user.role,
+    },
   });
 
-  expect([200, 409]).toContain(r.status());
-  return { email, password };
+  // 200 = created, 409 = already exists (idempotent setup)
+  expect([200, 409]).toContain(res.status());
+
+  return user;
 }
 
-export async function loginAndGetSessionCookie(
-  request: any,
-  creds: { email: string; password: string },
-) {
-  const res = await request.post(`${BASE_URL}/api/auth/login`, {
-    data: { email: creds.email, password: creds.password },
+export async function loginAndGetSessionCookie(request: any, role: TestUserRole) {
+  const user = await ensureUser(request, role);
+
+  const res = await request.post(LOGIN_ENDPOINT, {
+    data: { email: user.email, password: user.password },
   });
 
-  expect(res.status(), 'login must succeed before calling protected APIs').toBe(200);
+  expect(res.status()).toBe(200);
 
-  const setCookie = res.headers()['set-cookie'];
-  expect(setCookie, 'login response must include Set-Cookie header').toBeTruthy();
+  const setCookieHeader = res.headers()['set-cookie'];
+  expect(setCookieHeader, 'login must return Set-Cookie header').toBeTruthy();
 
-  // Session cookie name is defined in src/lib/session.ts
-  const sessionCookie = extractCookieFromSetCookie(setCookie, 'qaqanda_session');
-  expect(sessionCookie, 'qaqanda_session cookie must be present in Set-Cookie').toBeTruthy();
+  const sessionCookie = extractCookieFromSetCookie(setCookieHeader, 'qaqanda_session');
+  expect(sessionCookie, 'qaqanda_session cookie must be present').toBeTruthy();
 
-  return sessionCookie as string; // "qaqanda_session=...."
+  return sessionCookie as string; // "qaqanda_session=..."
 }
