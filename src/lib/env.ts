@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 const baseSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  ADMIN_SECRET: z.string().min(32).optional(),
 
   DATABRICKS_HOST: z.string().url().optional(),
   DATABRICKS_TOKEN: z.string().min(1).optional(),
@@ -72,6 +73,7 @@ if (env.NODE_ENV === 'production' && !forceMock && !isCi) {
 // Export final env
 export const ENV = {
   NODE_ENV: env.NODE_ENV,
+  ADMIN_SECRET: env.ADMIN_SECRET,
   DATABRICKS_HOST: env.DATABRICKS_HOST,
   DATABRICKS_TOKEN: env.DATABRICKS_TOKEN,
   DATABRICKS_WAREHOUSE_ID: env.DATABRICKS_WAREHOUSE_ID,

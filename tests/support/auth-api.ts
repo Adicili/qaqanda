@@ -10,6 +10,12 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const REGISTER_ENDPOINT = `${BASE_URL}/api/auth/register`;
 const LOGIN_ENDPOINT = `${BASE_URL}/api/auth/login`;
 
+/**
+ * Ensures a test user exists.
+ * IMPORTANT:
+ * - /api/auth/register creates ENGINEER by default (no role assignment here).
+ * - LEAD role is provisioned separately via admin promotion endpoint in tests.
+ */
 export async function ensureUser(request: any, role: TestUserRole) {
   const user = TEST_USERS[role];
 
@@ -18,10 +24,6 @@ export async function ensureUser(request: any, role: TestUserRole) {
       email: user.email,
       password: user.password,
       confirmPassword: user.password,
-      // IMPORTANT:
-      // This assumes your backend supports role assignment on register.
-      // If it DOES NOT, you must add a test-only seed mechanism later.
-      role: user.role,
     },
   });
 
