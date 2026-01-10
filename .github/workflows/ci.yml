@@ -14,7 +14,6 @@ jobs:
     env:
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-      ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
 
     steps:
       - name: Checkout repository
@@ -46,6 +45,7 @@ jobs:
     env:
       USE_DATABRICKS_MOCK: 'true'
       SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+      ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
 
     steps:
       - name: Checkout repository
