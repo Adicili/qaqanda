@@ -1,15 +1,13 @@
 // tests/support/admin-api.ts
-import { expect } from '@playwright/test';
+import { expect, type APIRequestContext } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
-const ADMIN_PROMOTE_ENDPOINT = `${BASE_URL}/api/admin/users/promote`;
+const ADMIN_PROMOTE_ENDPOINT = '/api/admin/users/promote';
 
 export async function promoteUserRole(
-  request: any,
+  request: APIRequestContext,
   input: { email: string; role: 'ENGINEER' | 'LEAD' },
 ) {
   const adminSecret = process.env.ADMIN_SECRET;
-
   if (!adminSecret) {
     throw new Error('Missing ADMIN_SECRET. Put it into .env.local so Playwright can load it.');
   }

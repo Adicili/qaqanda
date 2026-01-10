@@ -1,22 +1,18 @@
 // tests/support/auth-api.ts
-import { expect } from '@playwright/test';
+import { expect, type APIRequestContext } from '@playwright/test';
 
 import { TEST_USERS, type TestUserRole } from '../fixtures/test-users';
 
 import { extractCookieFromSetCookie } from './cookies';
 
-const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
-
-const REGISTER_ENDPOINT = `${BASE_URL}/api/auth/register`;
-const LOGIN_ENDPOINT = `${BASE_URL}/api/auth/login`;
+const REGISTER_ENDPOINT = '/api/auth/register';
+const LOGIN_ENDPOINT = '/api/auth/login';
 
 /**
  * Ensures a test user exists.
- * IMPORTANT:
- * - /api/auth/register creates ENGINEER by default (no role assignment here).
- * - LEAD role is provisioned separately via admin promotion endpoint in tests.
+ * - /api/auth/register creates ENGINEER by default.
  */
-export async function ensureUser(request: any, role: TestUserRole) {
+export async function ensureUser(request: APIRequestContext, role: TestUserRole) {
   const user = TEST_USERS[role];
 
   const res = await request.post(REGISTER_ENDPOINT, {
@@ -27,13 +23,11 @@ export async function ensureUser(request: any, role: TestUserRole) {
     },
   });
 
-  // 200 = created, 409 = already exists (idempotent setup)
   expect([200, 409]).toContain(res.status());
-
   return user;
 }
 
-export async function loginAndGetSessionCookie(request: any, role: TestUserRole) {
+export async function loginAndGetSessionCookie(request: APIRequestContext, role: TestUserRole) {
   const user = await ensureUser(request, role);
 
   const res = await request.post(LOGIN_ENDPOINT, {
@@ -48,5 +42,18 @@ export async function loginAndGetSessionCookie(request: any, role: TestUserRole)
   const sessionCookie = extractCookieFromSetCookie(setCookieHeader, 'qaqanda_session');
   expect(sessionCookie, 'qaqanda_session cookie must be present').toBeTruthy();
 
-  return sessionCookie as string; // "qaqanda_session=..."
+  return sessionCookie as string;
+}
+
+function base64UrlDecode(input: string): string {
+  const pad = input.length % 4 === 0 ? '' : '='.repeat(4 - (input.length % 4));
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/') + pad;
+  return Buffer.from(b64, 'base64').toString('utf8');
+}
+
+export function decodeSessionCookie(sessionCookie: string): { userId: string; role: string } {
+  const raw = sessionCookie.split('=')[1] ?? '';
+  const body = raw.split('.')[0] ?? '';
+  const json = base64UrlDecode(body);
+  return JSON.parse(json);
 }

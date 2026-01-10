@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 
 import { executeQuery } from '@/lib/databricksClient';
 import { ENV } from '@/lib/env';
+import { readLocalDb, updateLocalDb } from '@/lib/localdb';
 
 const SCHEMA = 'workspace.qaqanda';
 
@@ -34,16 +35,11 @@ export type KBDocPatch = {
   tags: string[];
 };
 
-const memoryKbDocs = new Map<string, KBDoc>();
-
 function parseTags(raw: string | null): string[] {
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed.map((t) => String(t));
-    }
-    // fallback – ako neko upuca plain string umesto JSON
+    if (Array.isArray(parsed)) return parsed.map((t) => String(t));
     return [String(parsed)];
   } catch {
     return [];
@@ -61,10 +57,102 @@ function mapKBDocRow(row: DbKBDocRow): KBDoc {
   };
 }
 
+/**
+ * -------------------------
+ * File-based local storage
+ * -------------------------
+ */
+
+type LocalKbRow = {
+  id: string;
+  title: string;
+  text: string;
+  tags: string[];
+  createdAt: string; // ISO
+  updatedAt: string | null; // ISO | null
+};
+
+function toKBDoc(row: LocalKbRow): KBDoc {
+  return {
+    id: row.id,
+    title: row.title,
+    text: row.text,
+    tags: Array.isArray(row.tags) ? row.tags.map(String) : [],
+    createdAt: new Date(row.createdAt),
+    updatedAt: row.updatedAt ? new Date(row.updatedAt) : null,
+  };
+}
+
+async function getByIdLocal(id: string): Promise<KBDoc | null> {
+  const db = await readLocalDb();
+  const docs = db.kb as unknown as LocalKbRow[];
+  const found = docs.find((d) => d.id === id);
+  return found ? toKBDoc(found) : null;
+}
+
+async function addDocLocal(title: string, text: string, tags: string[]): Promise<string> {
+  const id = `kb_${randomUUID()}`;
+  const nowIso = new Date().toISOString();
+
+  await updateLocalDb<void>((db) => {
+    const docs = db.kb as unknown as LocalKbRow[];
+
+    const row: LocalKbRow = {
+      id,
+      title,
+      text,
+      tags: tags.map(String),
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    docs.push(row);
+  });
+
+  return id;
+}
+
+async function updateDocLocal(id: string, arg: string | KBDocPatch): Promise<void> {
+  const nowIso = new Date().toISOString();
+
+  await updateLocalDb<void>((db) => {
+    const docs = db.kb as unknown as LocalKbRow[];
+    const idx = docs.findIndex((d) => d.id === id);
+    if (idx === -1) return;
+
+    const existing = docs[idx];
+
+    if (typeof arg === 'string') {
+      docs[idx] = { ...existing, text: arg, updatedAt: nowIso };
+      return;
+    }
+
+    docs[idx] = {
+      ...existing,
+      title: arg.title,
+      text: arg.text,
+      tags: arg.tags.map(String),
+      updatedAt: nowIso,
+    };
+  });
+}
+
+async function listAllLocal(): Promise<KBDoc[]> {
+  const db = await readLocalDb();
+  const docs = (db.kb as unknown as LocalKbRow[]).slice();
+
+  docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return docs.map(toKBDoc);
+}
+
+/**
+ * -------------------------
+ * Public API
+ * -------------------------
+ */
+
 export async function getById(id: string): Promise<KBDoc | null> {
-  if (!hasDatabricksEnv) {
-    return memoryKbDocs.get(id) ?? null;
-  }
+  if (!hasDatabricksEnv) return getByIdLocal(id);
 
   const sql = `
     SELECT id, title, text, tags, created_at, updated_at
@@ -80,20 +168,9 @@ export async function getById(id: string): Promise<KBDoc | null> {
 }
 
 export async function addDoc(title: string, text: string, tags: string[]): Promise<string> {
-  const id = `kb_${randomUUID()}`;
+  if (!hasDatabricksEnv) return addDocLocal(title, text, tags);
 
-  if (!hasDatabricksEnv) {
-    const now = new Date();
-    memoryKbDocs.set(id, {
-      id,
-      title,
-      text,
-      tags,
-      createdAt: now,
-      updatedAt: now,
-    });
-    return id;
-  }
+  const id = `kb_${randomUUID()}`;
 
   // EP03 test očekuje RETURNING id (mock vraća 'kb-xyz')
   const sql = `
@@ -117,30 +194,7 @@ export async function updateDoc(id: string, newText: string): Promise<void>;
 // Overload 2 (EP05): update title + text + tags
 export async function updateDoc(id: string, patch: KBDocPatch): Promise<void>;
 export async function updateDoc(id: string, arg: string | KBDocPatch): Promise<void> {
-  const now = new Date();
-
-  if (!hasDatabricksEnv) {
-    const existing = memoryKbDocs.get(id);
-    if (!existing) return;
-
-    if (typeof arg === 'string') {
-      memoryKbDocs.set(id, {
-        ...existing,
-        text: arg,
-        updatedAt: now,
-      });
-      return;
-    }
-
-    memoryKbDocs.set(id, {
-      ...existing,
-      title: arg.title,
-      text: arg.text,
-      tags: arg.tags,
-      updatedAt: now,
-    });
-    return;
-  }
+  if (!hasDatabricksEnv) return updateDocLocal(id, arg);
 
   if (typeof arg === 'string') {
     // EP03 behavior (unit tests expect :text param only)
@@ -175,11 +229,7 @@ export async function updateDoc(id: string, arg: string | KBDocPatch): Promise<v
 }
 
 export async function listAll(): Promise<KBDoc[]> {
-  if (!hasDatabricksEnv) {
-    return Array.from(memoryKbDocs.values()).sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-    );
-  }
+  if (!hasDatabricksEnv) return listAllLocal();
 
   const sql = `
     SELECT id, title, text, tags, created_at, updated_at

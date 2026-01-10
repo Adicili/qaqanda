@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { requireLead } from '@/lib/roles';
 import { addDoc } from '@/lib/db.kb';
-import { generateKbEntryFromPrompt } from '@/lib/llm';
+import { generateKbEntryFromPrompt, isLlmOutputError } from '@/lib/llm';
 import { insertKbAudit } from '@/lib/db.audit';
 
 const AddKbSchema = z.object({
@@ -12,7 +12,6 @@ const AddKbSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  // RBAC: Lead-only (API-level, ne UI)
   const auth = await requireLead();
   if (auth instanceof Response) return auth;
 
@@ -27,15 +26,14 @@ export async function POST(req: NextRequest) {
 
   const { prompt } = parsed.data;
 
-  try {
-    // 1) LLM -> strict schema validation happens inside lib/llm.ts (KbEntrySchema.parse)
-    const kbEntry = await generateKbEntryFromPrompt(prompt);
+  // ✅ Pass mock mode from tests via header
+  const mockMode = req.headers.get('x-mock-llm');
 
-    // 2) Persist doc
+  try {
+    const kbEntry = await generateKbEntryFromPrompt(prompt, { mockMode });
+
     const kbId = await addDoc(kbEntry.title, kbEntry.text, kbEntry.tags);
 
-    // 3) Audit
-    // NOTE: ako nemaš tabelu kb_audit još uvek, ovo će failovati — to je očekivano dok ne dodaš migraciju.
     await insertKbAudit({
       actorUserId: auth.userId,
       changeType: 'CREATE',
@@ -49,9 +47,14 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    return NextResponse.json({ id: kbId }, { status: 200 });
-  } catch {
-    // Ne leakuj detalje (LLM dump / DB token / stack)
+    return NextResponse.json({ success: true, id: kbId }, { status: 200 });
+  } catch (err) {
+    // ✅ LLM/mock output problems are client-visible (400)
+    if (isLlmOutputError(err)) {
+      return NextResponse.json({ error: 'Invalid AI output' }, { status: 400 });
+    }
+
+    console.error('KB add failed:', err);
     return NextResponse.json({ error: 'KB add failed' }, { status: 500 });
   }
 }

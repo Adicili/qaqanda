@@ -3,6 +3,7 @@ import crypto from 'crypto';
 
 import { ENV } from '@/lib/env';
 import { executeQuery } from '@/lib/databricksClient';
+import { readLocalDb, updateLocalDb } from '@/lib/localdb';
 
 export type UserRole = 'ENGINEER' | 'LEAD';
 
@@ -92,6 +93,20 @@ async function createUserDatabricks(input: {
   return created;
 }
 
+async function updateRoleByEmailDatabricks(email: string, role: UserRole): Promise<boolean> {
+  await executeQuery(
+    `
+      UPDATE ${SCHEMA}.users
+      SET role = :role
+      WHERE email = :email
+    `,
+    { email, role },
+  );
+
+  const after = await getUserByEmailDatabricks(email);
+  return after?.role === role;
+}
+
 async function listAllDatabricks(): Promise<DbUser[]> {
   const rows = await executeQuery<{
     id: string;
@@ -121,70 +136,91 @@ async function listAllDatabricks(): Promise<DbUser[]> {
   }));
 }
 
-async function updateRoleByEmailDatabricks(email: string, role: UserRole): Promise<void> {
-  await executeQuery(
-    `
-      UPDATE ${SCHEMA}.users
-      SET role = :role
-      WHERE email = :email
-    `,
-    { email, role },
-  );
-}
-
 /**
  * -------------------------
- * In-memory fallback storage
+ * File-based local storage
  * -------------------------
  */
 
-const memoryUsers = new Map<string, DbUser>();
-let memoryIdCounter = 1;
+type LocalUserRow = {
+  id: string;
+  email: string;
+  passwordHash: string;
+  role: UserRole;
+  createdAt: string; // ISO
+};
 
-async function getUserByEmailMemory(email: string): Promise<DbUser | null> {
-  const target = email.toLowerCase();
-
-  for (const user of memoryUsers.values()) {
-    if (user.email.toLowerCase() === target) {
-      return user;
-    }
-  }
-
-  return null;
+function toDbUser(row: LocalUserRow): DbUser {
+  return {
+    id: row.id,
+    email: row.email,
+    passwordHash: row.passwordHash,
+    role: row.role,
+    createdAt: new Date(row.createdAt),
+  };
 }
 
-async function createUserMemory(input: {
+async function getUserByEmailLocal(email: string): Promise<DbUser | null> {
+  const db = await readLocalDb();
+  const target = email.toLowerCase().trim();
+
+  const found = (db.users as unknown as LocalUserRow[]).find(
+    (u) => (u.email ?? '').toLowerCase().trim() === target,
+  );
+
+  return found ? toDbUser(found) : null;
+}
+
+async function createUserLocal(input: {
   email: string;
   passwordHash: string;
   role: UserRole;
 }): Promise<DbUser> {
-  const user: DbUser = {
-    id: String(memoryIdCounter++),
-    email: input.email,
-    passwordHash: input.passwordHash,
-    role: input.role,
-    createdAt: new Date(),
-  };
+  const email = input.email.trim();
 
-  memoryUsers.set(user.id, user);
-  return user;
-}
+  const created = await updateLocalDb<LocalUserRow>((db) => {
+    const users = db.users as unknown as LocalUserRow[];
+    const target = email.toLowerCase();
 
-async function listAllMemory(): Promise<DbUser[]> {
-  return Array.from(memoryUsers.values()).sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  );
-}
-
-async function updateRoleByEmailMemory(email: string, role: UserRole): Promise<void> {
-  const target = email.toLowerCase();
-
-  for (const [id, user] of memoryUsers.entries()) {
-    if (user.email.toLowerCase() === target) {
-      memoryUsers.set(id, { ...user, role });
-      return;
+    const exists = users.find((u) => (u.email ?? '').toLowerCase() === target);
+    if (exists) {
+      throw new Error(`User already exists for email: ${email}`);
     }
-  }
+
+    const row: LocalUserRow = {
+      id: crypto.randomUUID(),
+      email,
+      passwordHash: input.passwordHash,
+      role: input.role,
+      createdAt: new Date().toISOString(),
+    };
+
+    users.push(row);
+    return row;
+  });
+
+  return toDbUser(created);
+}
+
+async function updateRoleByEmailLocal(email: string, role: UserRole): Promise<boolean> {
+  const target = email.toLowerCase().trim();
+
+  return updateLocalDb<boolean>((db) => {
+    const users = db.users as unknown as LocalUserRow[];
+    const idx = users.findIndex((u) => (u.email ?? '').toLowerCase().trim() === target);
+    if (idx === -1) return false;
+
+    users[idx] = { ...users[idx], role };
+    return true;
+  });
+}
+
+async function listAllLocal(): Promise<DbUser[]> {
+  const db = await readLocalDb();
+  const users = (db.users as unknown as LocalUserRow[]).slice();
+
+  users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return users.map(toDbUser);
 }
 
 /**
@@ -194,10 +230,8 @@ async function updateRoleByEmailMemory(email: string, role: UserRole): Promise<v
  */
 
 async function getUserByEmail(email: string): Promise<DbUser | null> {
-  if (useDatabricks) {
-    return getUserByEmailDatabricks(email);
-  }
-  return getUserByEmailMemory(email);
+  if (useDatabricks) return getUserByEmailDatabricks(email);
+  return getUserByEmailLocal(email);
 }
 
 async function create(input: {
@@ -205,31 +239,25 @@ async function create(input: {
   passwordHash: string;
   role: UserRole;
 }): Promise<DbUser> {
-  if (useDatabricks) {
-    return createUserDatabricks(input);
-  }
-  return createUserMemory(input);
+  if (useDatabricks) return createUserDatabricks(input);
+  return createUserLocal(input);
+}
+
+async function updateRoleByEmail(email: string, role: UserRole): Promise<boolean> {
+  if (useDatabricks) return updateRoleByEmailDatabricks(email, role);
+  return updateRoleByEmailLocal(email, role);
 }
 
 async function listAll(): Promise<DbUser[]> {
-  if (useDatabricks) {
-    return listAllDatabricks();
-  }
-  return listAllMemory();
-}
-
-async function updateRoleByEmail(email: string, role: UserRole): Promise<void> {
-  if (useDatabricks) {
-    return updateRoleByEmailDatabricks(email, role);
-  }
-  return updateRoleByEmailMemory(email, role);
+  if (useDatabricks) return listAllDatabricks();
+  return listAllLocal();
 }
 
 export const dbUsers = {
   getUserByEmail,
   create,
-  listAll,
   updateRoleByEmail,
+  listAll,
 };
 
-export { getUserByEmail, create, listAll, updateRoleByEmail };
+export { getUserByEmail, create, updateRoleByEmail, listAll };

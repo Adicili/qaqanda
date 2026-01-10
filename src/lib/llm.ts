@@ -11,6 +11,28 @@ export type ExistingKbDoc = {
   tags: string[];
 };
 
+export type MockLLMMode = 'malformed' | 'schema_invalid' | 'code_fence' | 'throw' | 'ok';
+
+class LlmOutputError extends Error {
+  name = 'LlmOutputError';
+}
+
+export function isLlmOutputError(err: unknown): boolean {
+  return err instanceof LlmOutputError;
+}
+
+function normalizeMockMode(v: unknown): MockLLMMode | undefined {
+  const s = String(v ?? '')
+    .trim()
+    .toLowerCase();
+  if (s === 'malformed') return 'malformed';
+  if (s === 'schema_invalid') return 'schema_invalid';
+  if (s === 'code_fence') return 'code_fence';
+  if (s === 'throw') return 'throw';
+  if (s === 'ok') return 'ok';
+  return undefined;
+}
+
 function getMode(): LlmMode {
   return ENV.LLM_MODE;
 }
@@ -19,8 +41,43 @@ function shouldReturnBadOutput(): boolean {
   return ENV.MOCK_LLM_BAD;
 }
 
-function mockGenerate(prompt: string): unknown {
-  if (shouldReturnBadOutput()) {
+/**
+ * Header-driven mock overrides:
+ * - malformed: simulate non-JSON / unparsable output
+ * - schema_invalid: return wrong shape (Zod must fail)
+ * - code_fence: simulate ```json ... ``` (reject)
+ * - throw: simulate provider crash
+ * - ok: normal mock
+ */
+function applyMockModeOverride(mode: MockLLMMode | undefined): void {
+  if (!mode || mode === 'ok') return;
+
+  if (mode === 'throw') {
+    // This is a real server-ish failure
+    throw new Error('Mock LLM threw');
+  }
+
+  if (mode === 'malformed') {
+    // Treated as "AI output invalid" (400)
+    throw new LlmOutputError('Mock LLM output malformed');
+  }
+
+  if (mode === 'code_fence') {
+    // Treated as "AI output invalid" (400)
+    throw new LlmOutputError('Mock LLM output code-fenced');
+  }
+
+  if (mode === 'schema_invalid') {
+    // We don't throw here yet; we want Zod to fail consistently in parsing stage.
+    return;
+  }
+}
+
+function mockGenerate(prompt: string, mockMode?: MockLLMMode): unknown {
+  // Header override first
+  applyMockModeOverride(mockMode);
+
+  if (mockMode === 'schema_invalid' || shouldReturnBadOutput()) {
     // namerno pogrešno (tags nije niz) -> schema mora da pukne
     return { title: 'x', text: 'y', tags: 'not-an-array' };
   }
@@ -34,16 +91,17 @@ function mockGenerate(prompt: string): unknown {
   };
 }
 
-function mockUpdate(existing: ExistingKbDoc, prompt: string): unknown {
-  if (shouldReturnBadOutput()) {
+function mockUpdate(existing: ExistingKbDoc, prompt: string, mockMode?: MockLLMMode): unknown {
+  applyMockModeOverride(mockMode);
+
+  if (mockMode === 'schema_invalid' || shouldReturnBadOutput()) {
     return { title: 123, text: [], tags: ['ok'] }; // schema fail (wrong types)
   }
 
   const cleanPrompt = prompt.trim().slice(0, 2000);
 
   return {
-    // “Update” = zadrži ID u sistemu, ali promeni sadržaj kroz prompt
-    title: existing.title, // ili inferTitleFromPrompt(cleanPrompt) ako hoćeš
+    title: existing.title,
     text:
       `${existing.text}\n\n---\n\n` +
       `Update instruction:\n${cleanPrompt}\n\n(Updated in mock mode)`,
@@ -54,20 +112,31 @@ function mockUpdate(existing: ExistingKbDoc, prompt: string): unknown {
 /**
  * Public API: Add flow
  */
-export async function generateKbEntryFromPrompt(prompt: string): Promise<KbEntry> {
+export async function generateKbEntryFromPrompt(
+  prompt: string,
+  opts?: { mockMode?: string | null },
+): Promise<KbEntry> {
   const p = prompt?.trim() ?? '';
   if (!p) {
-    // Ovo je backup guard. Primarna validacija treba da bude u route Zod-u.
     throw new Error('Prompt is required');
   }
 
   const mode = getMode();
+  const mockMode = normalizeMockMode(opts?.mockMode);
 
   if (mode === 'mock') {
-    return KbEntrySchema.parse(mockGenerate(p));
+    try {
+      return KbEntrySchema.parse(mockGenerate(p, mockMode));
+    } catch (err) {
+      // If header override already marked it as invalid output, preserve it
+      if (err instanceof LlmOutputError) throw err;
+
+      // Zod schema failure = invalid AI output (400)
+      throw new LlmOutputError('Mock LLM output failed schema validation');
+    }
   }
 
-  // EP09: ovde ide pravi LLM call + parsing + schema validation
+  // EP09: real LLM call + parsing + schema validation
   throw new Error('LLM real mode not implemented (EP09)');
 }
 
@@ -77,14 +146,21 @@ export async function generateKbEntryFromPrompt(prompt: string): Promise<KbEntry
 export async function updateKbEntryFromPrompt(
   existing: ExistingKbDoc,
   prompt: string,
+  opts?: { mockMode?: string | null },
 ): Promise<KbEntry> {
   const p = prompt?.trim() ?? '';
   if (!p) throw new Error('Prompt is required');
 
   const mode = getMode();
+  const mockMode = normalizeMockMode(opts?.mockMode);
 
   if (mode === 'mock') {
-    return KbEntrySchema.parse(mockUpdate(existing, p));
+    try {
+      return KbEntrySchema.parse(mockUpdate(existing, p, mockMode));
+    } catch (err) {
+      if (err instanceof LlmOutputError) throw err;
+      throw new LlmOutputError('Mock LLM output failed schema validation');
+    }
   }
 
   throw new Error('LLM real mode not implemented (EP09)');
@@ -93,7 +169,6 @@ export async function updateKbEntryFromPrompt(
 /* ----------------- helpers ----------------- */
 
 function inferTitleFromPrompt(prompt: string): string {
-  // Stabilno, bez random-a. Ne pokušava NLP—poenta je determinističnost.
   const lowered = prompt.toLowerCase();
   if (lowered.includes('playwright')) return 'Playwright';
   if (lowered.includes('retry')) return 'Retries';
