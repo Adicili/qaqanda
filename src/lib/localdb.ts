@@ -1,8 +1,9 @@
-/* eslint-disable no-restricted-properties */
 // src/lib/localdb.ts
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
+
+import { ENV } from '@/lib/env';
 
 type JsonPrimitive = string | number | boolean | null;
 type JsonValue = JsonPrimitive | JsonValue[] | { [k: string]: JsonValue };
@@ -19,7 +20,7 @@ const DEFAULT_DB_RELATIVE_PATH = path.join('.qaqanda', 'local-db.json');
 
 function getDbPath(): string {
   // Allow override (tests, CI, custom env)
-  const fromEnv = process.env.LOCAL_DB_PATH?.trim();
+  const fromEnv = ENV.LOCAL_DB_PATH?.trim();
   if (fromEnv) return path.isAbsolute(fromEnv) ? fromEnv : path.resolve(fromEnv);
   return path.resolve(DEFAULT_DB_RELATIVE_PATH);
 }
@@ -56,8 +57,8 @@ async function sleep(ms: number): Promise<void> {
  * - We retry with jittered backoff up to LOCK_TIMEOUT_MS.
  */
 async function acquireLock(lockPath: string): Promise<{ release: () => Promise<void> }> {
-  const LOCK_TIMEOUT_MS = Number(process.env.LOCAL_DB_LOCK_TIMEOUT_MS ?? 10_000);
-  const STALE_LOCK_MS = Number(process.env.LOCAL_DB_STALE_LOCK_MS ?? 60_000);
+  const LOCK_TIMEOUT_MS = Number(ENV.LOCAL_DB_LOCK_TIMEOUT_MS ?? 10_000);
+  const STALE_LOCK_MS = Number(ENV.LOCAL_DB_STALE_LOCK_MS ?? 60_000);
 
   // ✅ Ensure the directory exists before creating the lock file
   await ensureParentDir(lockPath);
