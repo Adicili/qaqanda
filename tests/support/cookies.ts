@@ -1,12 +1,12 @@
-export function extractCookieFromSetCookie(
-  setCookieHeader: unknown,
-  cookieName: string,
-): string | null {
-  const raw = String(setCookieHeader ?? '');
-  const idx = raw.indexOf(`${cookieName}=`);
-  if (idx === -1) return null;
+// tests/support/cookies.ts
 
-  const slice = raw.slice(idx);
-  const firstPart = slice.split(';')[0]?.trim(); // "name=value"
-  return firstPart || null;
+/**
+ * Extracts a single cookie "name=value" pair from a Set-Cookie header.
+ * Handles multiple cookies in a single header string.
+ */
+export function extractCookieFromSetCookie(setCookieHeader: string, cookieName: string) {
+  // Split only between cookies (commas can appear in Expires attribute)
+  const parts = setCookieHeader.split(/,(?=[^;]+=[^;]+)/g);
+  const hit = parts.find((p) => p.trim().startsWith(`${cookieName}=`));
+  return hit ? hit.split(';')[0].trim() : null;
 }

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { ensureEngineerUser } from '../support/auth-api';
+import { ensureUser } from '../support/auth-api';
 
 import { LoginPage } from './pages/LoginPage';
 import { AskPage } from './pages/AskPage';
@@ -89,7 +89,7 @@ test.describe('EP02-US02 - Login & Session Cookie (API)', () => {
         { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
         { type: 'us', description: 'EP02-US02' },
       );
-    const { email, password } = await ensureEngineerUser(request);
+    const { email, password } = await ensureUser(request, 'ENGINEER');
     const loginPage = new LoginPage(page);
     const askPage = new AskPage(page);
 

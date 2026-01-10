@@ -1,39 +1,59 @@
-import { expect } from '@playwright/test';
+// tests/support/auth-api.ts
+import { expect, type APIRequestContext } from '@playwright/test';
+
+import { TEST_USERS, type TestUserRole } from '../fixtures/test-users';
 
 import { extractCookieFromSetCookie } from './cookies';
 
-import { ENV } from '@/lib/env';
+const REGISTER_ENDPOINT = '/api/auth/register';
+const LOGIN_ENDPOINT = '/api/auth/login';
 
-const BASE_URL = ENV.BASE_URL ?? 'http://localhost:3000';
+/**
+ * Ensures a test user exists.
+ * - /api/auth/register creates ENGINEER by default.
+ */
+export async function ensureUser(request: APIRequestContext, role: TestUserRole) {
+  const user = TEST_USERS[role];
 
-export async function ensureEngineerUser(request: any) {
-  const email = 'engineer@example.com';
-  const password = 'Passw0rd!';
-
-  const r = await request.post(`${BASE_URL}/api/auth/register`, {
-    data: { email, password, confirmPassword: password },
+  const res = await request.post(REGISTER_ENDPOINT, {
+    data: {
+      email: user.email,
+      password: user.password,
+      confirmPassword: user.password,
+    },
   });
 
-  expect([200, 409]).toContain(r.status());
-  return { email, password };
+  expect([200, 409]).toContain(res.status());
+  return user;
 }
 
-export async function loginAndGetSessionCookie(
-  request: any,
-  creds: { email: string; password: string },
-) {
-  const res = await request.post(`${BASE_URL}/api/auth/login`, {
-    data: { email: creds.email, password: creds.password },
+export async function loginAndGetSessionCookie(request: APIRequestContext, role: TestUserRole) {
+  const user = await ensureUser(request, role);
+
+  const res = await request.post(LOGIN_ENDPOINT, {
+    data: { email: user.email, password: user.password },
   });
 
-  expect(res.status(), 'login must succeed before calling protected APIs').toBe(200);
+  expect(res.status()).toBe(200);
 
-  const setCookie = res.headers()['set-cookie'];
-  expect(setCookie, 'login response must include Set-Cookie header').toBeTruthy();
+  const setCookieHeader = res.headers()['set-cookie'];
+  expect(setCookieHeader, 'login must return Set-Cookie header').toBeTruthy();
 
-  // Session cookie name is defined in src/lib/session.ts
-  const sessionCookie = extractCookieFromSetCookie(setCookie, 'qaqanda_session');
-  expect(sessionCookie, 'qaqanda_session cookie must be present in Set-Cookie').toBeTruthy();
+  const sessionCookie = extractCookieFromSetCookie(setCookieHeader, 'qaqanda_session');
+  expect(sessionCookie, 'qaqanda_session cookie must be present').toBeTruthy();
 
-  return sessionCookie as string; // "qaqanda_session=...."
+  return sessionCookie as string;
+}
+
+function base64UrlDecode(input: string): string {
+  const pad = input.length % 4 === 0 ? '' : '='.repeat(4 - (input.length % 4));
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/') + pad;
+  return Buffer.from(b64, 'base64').toString('utf8');
+}
+
+export function decodeSessionCookie(sessionCookie: string): { userId: string; role: string } {
+  const raw = sessionCookie.split('=')[1] ?? '';
+  const body = raw.split('.')[0] ?? '';
+  const json = base64UrlDecode(body);
+  return JSON.parse(json);
 }

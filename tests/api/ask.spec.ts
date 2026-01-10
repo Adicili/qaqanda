@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
 
-import { ensureEngineerUser, loginAndGetSessionCookie } from '../support/auth-api';
+import { loginAndGetSessionCookie } from '../support/auth-api';
 
 test.describe('EP04-US02 — /api/ask', () => {
   test('EP04-US02-TC01 — Authenticated request returns answer + context + latency', async ({
     request,
   }) => {
-    const creds = await ensureEngineerUser(request);
-    const sessionCookie = await loginAndGetSessionCookie(request, creds);
+    const sessionCookie = await loginAndGetSessionCookie(request, 'ENGINEER');
 
     const res = await request.post('/api/ask', {
       headers: { Cookie: sessionCookie },
@@ -36,8 +35,7 @@ test.describe('EP04-US02 — /api/ask', () => {
   });
 
   test('EP04-US02-TC02 — Empty or whitespace-only question returns 400', async ({ request }) => {
-    const creds = await ensureEngineerUser(request);
-    const sessionCookie = await loginAndGetSessionCookie(request, creds);
+    const sessionCookie = await loginAndGetSessionCookie(request, 'ENGINEER');
 
     // empty
     const res1 = await request.post('/api/ask', {
@@ -59,8 +57,7 @@ test.describe('EP04-US02 — /api/ask', () => {
   });
 
   test('EP04-US02-TC03 — Invalid request body schema returns 400', async ({ request }) => {
-    const creds = await ensureEngineerUser(request);
-    const sessionCookie = await loginAndGetSessionCookie(request, creds);
+    const sessionCookie = await loginAndGetSessionCookie(request, 'ENGINEER');
 
     // missing question
     const res1 = await request.post('/api/ask', {

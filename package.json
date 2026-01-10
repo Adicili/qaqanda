@@ -23,7 +23,8 @@
     "test:seed:db": "cross-env DATABRICKS_SEED_TESTS_ENABLED=true USE_DATABRICKS_MOCK=false vitest run --config vitest.db.config.ts --reporter=verbose",
     "test:canary": "vitest run --config vitest.canary.config.ts",
     "test:canary:rw": "cross-env DATABRICKS_CANARY_ENABLED=true USE_DATABRICKS_MOCK=false vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose",
-    "test:canary:ro": "cross-env DATABRICKS_CANARY_ENABLED=true USE_DATABRICKS_MOCK=false vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose"
+    "test:canary:ro": "cross-env DATABRICKS_CANARY_ENABLED=true USE_DATABRICKS_MOCK=false vitest run tests/integration/databricks.canary.spec.ts --reporter=verbose",
+    "promote:user": "tsx scripts/promote-user.ts"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx,json,css,md}": [

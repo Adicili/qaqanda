@@ -4,38 +4,35 @@
 
 ---
 
-## EP05-US01 — Add Knowledge Base Entry via AI
+## EP05-US01 — Add Knowledge Base Entry via AI (`POST /api/kb/add`)
 
 ---
 
 ### EP05-US01-TC01
 
-- **Test name:** Lead can add KB entry via AI (happy path)
-- **Type:** API
+- **Test name:** Unauthenticated request is rejected
+- **Type:** API / Auth
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC01 — unauthenticated add rejected`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC01"`
 
 **Description:**  
-Verify that a QA Lead can successfully create a new KB entry using AI-generated content.
-
-**Preconditions:**
-
-- Authenticated user with role `LEAD`
-- LLM client mocked to return valid JSON
-- Databricks available (mock or dev)
+Verify that unauthenticated users cannot add KB entries.
 
 **Steps:**
 
-1. Authenticate as Lead.
-2. Send `POST /api/kb/add` with body `{ prompt: "Generate KB entry about Playwright retries" }`.
-3. Mock LLM returns valid JSON `{ title, text, tags[] }`.
+1. Send `POST /api/kb/add` with valid `{ prompt }` and no auth cookies.
 
 **Expected Result:**
 
-- Status `200 OK`
-- Response contains created KB entry ID
-- New record inserted into `kb_docs`
-- Audit record created in `kb_audit` with `change_type = CREATE`
+- Status `401 Unauthorized`
+- Error payload returned
+- No DB writes performed
 
 ---
 
@@ -45,14 +42,20 @@ Verify that a QA Lead can successfully create a new KB entry using AI-generated 
 - **Type:** API / Security
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC02 — engineer forbidden`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC02"`
 
 **Description:**  
-Ensure only Lead users can access `/api/kb/add`.
+Ensure only users with LEAD role can access KB creation.
 
 **Steps:**
 
-1. Authenticate as Engineer (non-Lead).
-2. Send `POST /api/kb/add` with valid prompt.
+1. Authenticate as ENGINEER.
+2. Call `POST /api/kb/add` with valid prompt.
 
 **Expected Result:**
 
@@ -64,100 +67,326 @@ Ensure only Lead users can access `/api/kb/add`.
 
 ### EP05-US01-TC03
 
-- **Test name:** Invalid request body rejected
-- **Type:** API / Validation
-- **Priority:** P1
+- **Test name:** Lead can add KB entry via AI (happy path)
+- **Type:** API
+- **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC03 — lead happy path`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC03"`
 
 **Description:**  
-Verify request validation for missing or invalid `prompt`.
+Verify that a Lead can successfully create a KB entry using AI-generated content.
 
 **Steps:**
 
-1. Authenticate as Lead.
-2. Send `POST /api/kb/add` with `{}` or `{ prompt: "" }`.
+1. Authenticate as LEAD.
+2. Call `POST /api/kb/add` with `{ prompt }`.
+3. LLM returns valid JSON `{ title, text, tags[] }`.
 
 **Expected Result:**
 
-- Status `400 Bad Request`
-- Validation error message returned
-- No DB writes performed
+- Status `200 OK`
+- Response contains KB entry ID
+- Record inserted into `kb_docs`
+- Audit record created with `change_type = CREATE`
 
 ---
 
 ### EP05-US01-TC04
 
-- **Test name:** Invalid LLM output rejected
-- **Type:** API / AI Validation
-- **Priority:** P0
+- **Test name:** Missing or empty prompt is rejected
+- **Type:** API / Validation
+- **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC04 — invalid prompt`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC04"`
 
 **Description:**  
-Ensure malformed or non-JSON AI output is rejected safely.
-
-**Preconditions:**
-
-- LLM mocked to return invalid output (plain text or malformed JSON)
+Validate request body validation for missing or empty prompt.
 
 **Steps:**
 
-1. Authenticate as Lead.
-2. Call `POST /api/kb/add`.
-3. LLM returns invalid response.
+1. Authenticate as LEAD.
+2. Call endpoint with `{}`, `{ prompt: "" }`, and `{ prompt: "   " }`.
 
 **Expected Result:**
 
 - Status `400 Bad Request`
-- Clear error message returned
-- No KB entry inserted
-- No audit entry created
+- Validation error message
+- No DB writes
 
 ---
 
 ### EP05-US01-TC05
 
-- **Test name:** UI flow — add KB entry via AI
-- **Type:** UI
-- **Priority:** P1
+- **Test name:** Prompt exceeding max length is rejected
+- **Type:** API / Validation / Abuse
+- **Priority:** P2
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC05 — prompt too long`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC05"`
 
 **Description:**  
-Verify full UI flow for adding a KB entry via AI.
+Ensure overly long prompts are rejected to prevent abuse.
 
 **Steps:**
 
-1. Login as Lead.
-2. Navigate to `/kb`.
-3. Enter prompt and click “Generate”.
-4. Preview generated content.
-5. Confirm save.
+1. Authenticate as LEAD.
+2. Submit prompt exceeding max allowed length.
 
 **Expected Result:**
 
-- Preview shows generated title/text/tags
-- Success toast shown after save
-- Entry visible in KB list
+- Status `400` or `413`
+- Clear error message
+- No DB writes
 
 ---
 
-## EP05-US02 — Update Knowledge Base Entry via AI
+### EP05-US01-TC06
+
+- **Test name:** Malformed LLM output is rejected
+- **Type:** API / AI Validation
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC06 — malformed AI output`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC06"`
+
+**Description:**  
+Ensure malformed or non-JSON AI output is safely rejected.
+
+**Steps:**
+
+1. Authenticate as LEAD.
+2. Mock LLM to return invalid JSON.
+3. Call `POST /api/kb/add`.
+
+**Expected Result:**
+
+- Status `400 Bad Request`
+- Clear error message
+- No KB or audit records created
+
+---
+
+### EP05-US01-TC07
+
+- **Test name:** Schema-invalid AI output is rejected
+- **Type:** API / AI Validation
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC07 — schema invalid AI output`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC07"`
+
+**Description:**  
+Validate strict schema enforcement on AI-generated output.
+
+**Steps:**
+
+1. Authenticate as LEAD.
+2. Mock LLM to return JSON with invalid schema (e.g. `tags` not array).
+3. Call endpoint.
+
+**Expected Result:**
+
+- Status `400 Bad Request`
+- Schema validation error
+- No DB writes
+
+---
+
+### EP05-US01-TC08
+
+- **Test name:** Code-fenced JSON output is rejected
+- **Type:** API / AI Validation
+- **Priority:** P1
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC08 — code fence rejection`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC08"`
+
+**Description:**  
+Ensure AI responses wrapped in markdown/code fences are rejected.
+
+**Steps:**
+
+1. Authenticate as LEAD.
+2. Mock LLM to return fenced JSON.
+3. Call endpoint.
+
+**Expected Result:**
+
+- Status `400 Bad Request`
+- No raw LLM output leaked
+- No DB writes
+
+---
+
+### EP05-US01-TC09
+
+- **Test name:** Audit record created on successful KB creation
+- **Type:** API / Audit
+- **Priority:** P1
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API / integration
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC09 — audit create`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC09"`
+
+**Description:**  
+Verify audit trail is created on successful KB creation.
+
+**Steps:**
+
+1. Authenticate as LEAD.
+2. Create KB entry successfully.
+3. Query audit storage.
+
+**Expected Result:**
+
+- Audit record exists
+- `change_type = CREATE`
+- Actor user ID matches Lead
+- Snapshot contains created doc
+
+---
+
+### EP05-US01-TC10
+
+- **Test name:** Atomicity enforced when audit insert fails
+- **Type:** API / Consistency
+- **Priority:** P1
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API (unit/mocked)
+  - Spec file: `tests/api/kb-add-api.spec.ts`
+  - Test name: `EP05-US01-TC10 — atomicity`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US01-TC10"`
+
+**Description:**  
+Ensure KB entry is not persisted if audit write fails.
+
+**Steps:**
+
+1. Authenticate as LEAD.
+2. Mock audit insert to throw error.
+3. Call `POST /api/kb/add`.
+
+**Expected Result:**
+
+- Status `500 Internal Server Error`
+- KB entry not persisted (or behavior explicitly documented)
+
+---
+
+## EP05-US02 — Update Knowledge Base Entry via AI (`POST /api/kb/update`)
 
 ---
 
 ### EP05-US02-TC01
 
+- **Test name:** Unauthenticated update request is rejected
+- **Type:** API / Auth
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC01 — unauthenticated update rejected`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC01"`
+
+**Description:**  
+Verify that unauthenticated users cannot update existing KB entries.
+
+**Steps:**
+
+1. Send `POST /api/kb/update` with `{ id, prompt }` and no auth cookies.
+
+**Expected Result:**
+
+- Status `401 Unauthorized`
+- Error payload returned
+- No KB changes
+- No audit entry created
+
+---
+
+### EP05-US02-TC02
+
+- **Test name:** Non-Lead user cannot update KB entry
+- **Type:** API / Security
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC02 — engineer forbidden`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC02"`
+
+**Description:**  
+Ensure only users with LEAD role can update KB entries.
+
+**Steps:**
+
+1. Authenticate as ENGINEER.
+2. Call `POST /api/kb/update` with valid `{ id, prompt }`.
+
+**Expected Result:**
+
+- Status `403 Forbidden`
+- No KB changes
+- No audit entry created
+
+---
+
+### EP05-US02-TC03
+
 - **Test name:** Lead can update KB entry via AI (happy path)
 - **Type:** API
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC03 — lead happy path update`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC03"`
 
 **Description:**  
-Verify Lead can update an existing KB entry using AI.
+Verify that a Lead can successfully update an existing KB entry using AI-generated content.
 
 **Preconditions:**
 
 - Existing KB entry present
-- LLM mocked to return valid updated JSON
+- Authenticated user with role `LEAD`
+- LLM mocked to return valid updated JSON `{ title, text, tags[] }`
 
 **Steps:**
 
@@ -169,22 +398,31 @@ Verify Lead can update an existing KB entry using AI.
 
 - Status `200 OK`
 - `kb_docs` updated with new content
-- `kb_audit` contains entry with `change_type = UPDATE`
-- Audit includes before/after snapshot
+- Audit record created with `change_type = UPDATE`
+- Audit contains before/after snapshot
 
 ---
 
-### EP05-US02-TC02
+### EP05-US02-TC04
 
-- **Test name:** Update with non-existent ID returns 404
+- **Test name:** Update with non-existent KB ID returns 404
 - **Type:** API / Validation
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC04 — non-existent KB id`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC04"`
+
+**Description:**  
+Verify that updating a non-existent KB entry is handled gracefully.
 
 **Steps:**
 
 1. Authenticate as Lead.
-2. Send `POST /api/kb/update` with invalid `id`.
+2. Send `POST /api/kb/update` with invalid or non-existent `id`.
 
 **Expected Result:**
 
@@ -194,426 +432,127 @@ Verify Lead can update an existing KB entry using AI.
 
 ---
 
-### EP05-US02-TC03
+### EP05-US02-TC05
 
-- **Test name:** Invalid LLM output does not overwrite data
+- **Test name:** Invalid AI output does not overwrite KB entry
 - **Type:** API / Data Integrity
 - **Priority:** P0
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API tests
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC05 — invalid AI output`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC05"`
 
 **Description:**  
-Ensure invalid AI output does not corrupt existing KB entry.
+Ensure malformed or schema-invalid AI output does not corrupt existing KB data.
 
 **Steps:**
 
 1. Authenticate as Lead.
-2. Send update request.
-3. LLM returns invalid JSON.
+2. Mock LLM to return invalid or malformed JSON.
+3. Call `POST /api/kb/update`.
 
 **Expected Result:**
 
 - Status `400 Bad Request`
-- Original KB entry unchanged
-- No audit update entry created
+- Original KB entry remains unchanged
+- No audit entry created
 
 ---
 
-### EP05-US02-TC04
+### EP05-US02-TC06
 
-- **Test name:** Non-Lead user cannot update KB entry
-- **Type:** API / Security
-- **Priority:** P0
+- **Test name:** Audit record created on successful KB update
+- **Type:** API / Audit
+- **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API / integration
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC06 — audit update`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC06"`
+
+**Description:**  
+Verify audit trail integrity for KB updates.
 
 **Steps:**
 
-1. Authenticate as Engineer.
-2. Call `POST /api/kb/update`.
+1. Perform successful KB update as Lead.
+2. Query audit storage.
 
 **Expected Result:**
 
-- Status `403 Forbidden`
-- No KB changes
-- No audit entry
+- Audit record exists
+- `change_type = UPDATE`
+- Correct actor user ID
+- Timestamp present
+- Before/after snapshots stored
 
 ---
 
-### EP05-US02-TC05
+### EP05-US02-TC07
 
-- **Test name:** UI flow — update KB entry via AI
-- **Type:** UI
+- **Test name:** Atomicity enforced when audit update fails
+- **Type:** API / Consistency
 - **Priority:** P1
 - **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright API (unit-level with mocks)
+  - Spec file: `tests/api/kb-update-api.spec.ts`
+  - Test name: `EP05-US02-TC07 — atomicity on update`
+  - Command:  
+    `pnpm test:api -- -g "EP05-US02-TC07"`
 
 **Description:**  
-Verify UI edit flow for updating KB entries.
+Ensure KB update is not persisted if audit write fails.
+
+**Steps:**
+
+1. Authenticate as Lead.
+2. Mock audit insert to throw error.
+3. Call update endpoint.
+
+**Expected Result:**
+
+- Status `500 Internal Server Error`
+- KB entry remains unchanged
+
+---
+
+### EP05-US02-TC08
+
+- **Test name:** UI flow — update KB entry with preview
+- **Type:** UI
+- **Priority:** P2
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI tests
+  - Spec file: `tests/ui/kb-ui.spec.ts`
+  - Test name: `EP05-US02-TC08 — update preview UX`
+  - Command:  
+    `pnpm test:ui -- -g "EP05-US02-TC08"`
+
+**Description:**  
+Verify UX flow for updating KB entries via AI.
 
 **Steps:**
 
 1. Login as Lead.
 2. Navigate to `/kb`.
 3. Select existing KB entry.
-4. Enter AI prompt and generate update.
-5. Preview changes.
-6. Confirm update.
+4. Enter prompt and generate update.
+5. Review preview.
+6. Confirm save.
 
 **Expected Result:**
 
-- Preview shows updated content
-- Success confirmation shown
+- Preview shows updated title/text/tags
+- Save requires explicit confirmation
 - KB list reflects updated entry
 
 ---
 
-## EP05-US02-TC06
-
-- **Test name:** Audit trail created for each update
-- **Type:** API / Audit
-- **Priority:** P2
-- **Automate:** Yes
-
-**Description:**  
-Ensure every successful update produces an audit record.
-
-**Steps:**
-
-1. Perform successful update as Lead.
-2. Query audit table.
-
-**Expected Result:**
-
-- Audit record exists with:
-  - `change_type = UPDATE`
-  - Correct user ID
-  - Timestamp
-  - Before/after data
-
----
-
 ## End of EP05 Test Cases
-
-## EP05 — Additional Test Cases (Coverage Gaps)
-
-> These are _add-on_ test cases to close the real gaps: auth vs role, strict LLM validation, audit integrity, atomicity, and UI guarding.
-
----
-
-# EP05-US01 — Add KB Entry via AI (`/api/kb/add`)
-
-### EP05-US01-TC00
-
-- **Test name:** Unauthenticated request returns 401
-- **Type:** API / Auth
-- **Priority:** P0
-- **Automate:** Yes (Playwright API)
-- **Spec file:** `tests/api/kb-add.spec.ts`
-- **Command:** `pnpm test:api -- -g "EP05-US01-TC00"`
-
-**Steps:**
-
-1. Send `POST /api/kb/add` with `{ prompt: "Create KB entry..." }` and **no cookies**.
-
-**Expected:**
-
-- `401 Unauthorized`
-- JSON error payload present (no stack trace)
-
----
-
-### EP05-US01-TC04
-
-- **Test name:** Valid JSON but invalid schema returns 400 (strict output validation)
-- **Type:** API / Validation
-- **Priority:** P0
-- **Automate:** Yes
-- **Preconditions:** LLM call mocked to return _schema-invalid_ JSON.
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Mock LLM response to return valid JSON with wrong types, e.g. `{ "title": "X", "text": "Y", "tags": "not-array" }`.
-3. Call `POST /api/kb/add` with a valid `{ prompt }`.
-
-**Expected:**
-
-- `400 Bad Request`
-- Error message indicates invalid AI output / schema validation
-- **No insert** into `kb_docs`
-- **No insert** into `kb_audit`
-
----
-
-### EP05-US01-TC05
-
-- **Test name:** LLM returns JSON wrapped in markdown/code fences → rejected
-- **Type:** API / Validation
-- **Priority:** P1
-- **Automate:** Yes
-- **Preconditions:** LLM mocked to return fenced JSON:
-  - `json\n{...}\n`
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Mock LLM response to include code fences / extra text.
-3. Call `POST /api/kb/add`.
-
-**Expected:**
-
-- `400 Bad Request`
-- Clear validation error (no raw LLM dump)
-- **No DB writes** (kb_docs + kb_audit)
-
----
-
-### EP05-US01-TC06
-
-- **Test name:** Prompt whitespace-only returns 400
-- **Type:** API / Validation
-- **Priority:** P1
-- **Automate:** Yes
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Call `POST /api/kb/add` with `{ prompt: "   " }`.
-
-**Expected:**
-
-- `400 Bad Request`
-- Error payload indicates prompt is required/invalid
-- No DB writes
-
----
-
-### EP05-US01-TC07
-
-- **Test name:** Prompt too long returns 400/413 (abuse guard)
-- **Type:** API / Validation / Abuse
-- **Priority:** P2
-- **Automate:** Yes
-- **Preconditions:** Define max prompt length (e.g. 5k/10k). This test locks behavior.
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Call `POST /api/kb/add` with prompt larger than max.
-
-**Expected:**
-
-- `400 Bad Request` (or `413 Payload Too Large`, whichever you implement)
-- Error message is clear
-- No DB writes
-
----
-
-### EP05-US01-TC08
-
-- **Test name:** Audit entry contains actor + change metadata (CREATE)
-- **Type:** API / Audit
-- **Priority:** P1
-- **Automate:** Yes (integration if DB available; otherwise unit with repo mocks)
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Mock LLM valid output.
-3. Call `POST /api/kb/add`.
-4. Verify `kb_audit` row created.
-
-**Expected:**
-
-- `kb_audit.change_type === "CREATE"`
-- `kb_audit.actor_user_id` (or equivalent) matches session user id
-- timestamp field exists (`created_at`)
-- snapshot contains the created doc (title/text/tags)
-
----
-
-### EP05-US01-TC09
-
-- **Test name:** Atomicity — if audit insert fails, KB entry is not persisted (or endpoint fails clearly)
-- **Type:** API / Consistency
-- **Priority:** P1
-- **Automate:** Yes (unit-level with mocks)
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Mock `db.kb.addDoc()` succeeds.
-3. Mock audit insert throws error.
-4. Call `POST /api/kb/add`.
-
-**Expected:**
-
-- `500 Internal Server Error`
-- Generic error message
-- If you implement rollback/compensation: KB entry not present afterwards
-- If no rollback possible: behavior must be explicitly asserted/documented (but don’t pretend success)
-
----
-
-# EP05-US02 — Update KB Entry via AI (`/api/kb/update`)
-
-### EP05-US02-TC00
-
-- **Test name:** Unauthenticated request returns 401
-- **Type:** API / Auth
-- **Priority:** P0
-- **Automate:** Yes
-
-**Steps:**
-
-1. Call `POST /api/kb/update` with `{ id: "kb-001", prompt: "..." }` and no cookies.
-
-**Expected:**
-
-- `401 Unauthorized`
-- Error payload present
-
----
-
-### EP05-US02-TC04
-
-- **Test name:** Valid JSON but invalid schema returns 400; doc not overwritten
-- **Type:** API / Validation
-- **Priority:** P0
-- **Automate:** Yes
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Ensure doc exists.
-3. Mock LLM to return schema-invalid JSON.
-4. Call `POST /api/kb/update`.
-
-**Expected:**
-
-- `400 Bad Request`
-- Existing `kb_docs` content unchanged
-- No audit entry (or audit entry indicates failure only if you _explicitly_ implement failure logging)
-
----
-
-### EP05-US02-TC05
-
-- **Test name:** Audit contains before/after snapshots + actor (UPDATE)
-- **Type:** API / Audit
-- **Priority:** P0
-- **Automate:** Yes (integration if DB available; otherwise unit with repo mocks)
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Seed a known KB doc state (title/text/tags).
-3. Mock LLM valid updated output.
-4. Call `POST /api/kb/update`.
-5. Read audit entry.
-
-**Expected:**
-
-- `change_type === "UPDATE"`
-- `actor_user_id` matches Lead
-- `before` snapshot equals original doc
-- `after` snapshot equals updated doc
-- timestamp exists
-
----
-
-### EP05-US02-TC06
-
-- **Test name:** Atomicity — if audit write fails, update is not applied
-- **Type:** API / Consistency
-- **Priority:** P1
-- **Automate:** Yes (unit with mocks)
-
-**Steps:**
-
-1. Authenticate as Lead.
-2. Mock repo: fetch existing doc OK.
-3. Mock audit insert throws.
-4. Call `POST /api/kb/update`.
-
-**Expected:**
-
-- `500 Internal Server Error`
-- Existing doc remains unchanged
-
----
-
-# EP05-US01/US02 — UI Additions
-
-### EP05-US01-TC10
-
-- **Test name:** Non-Lead blocked from `/kb` page (authz guard)
-- **Type:** UI / Auth Guard
-- **Priority:** P0
-- **Automate:** Yes (Playwright UI)
-
-**Steps:**
-
-1. Login as Engineer (or inject Engineer cookie).
-2. Navigate to `/kb`.
-
-**Expected:**
-
-- Redirect to `/` or `/login` OR forbidden UI state (whatever your app standard is)
-- KB management UI elements not visible (prompt textarea, generate button, etc.)
-
----
-
-### EP05-US01-TC11
-
-- **Test name:** UI distinguishes 400 vs 500 errors (clear messaging)
-- **Type:** UI / Error Handling
-- **Priority:** P1
-- **Automate:** Yes
-
-**Steps:**
-
-1. Login as Lead.
-2. Mock `/api/kb/add` to return 400 with `{ error: "Invalid AI output" }`.
-3. Submit prompt.
-
-**Expected:**
-
-- User-friendly validation banner shown (non-technical)
-- No “success” toast/state
-
-**Steps (500 path):**
-
-1. Mock `/api/kb/add` to return 500.
-2. Submit prompt.
-
-**Expected:**
-
-- Generic error banner (“Something went wrong…”)
-- No partial/garbled output shown
-
----
-
-### EP05-US02-TC10
-
-- **Test name:** Update UI shows preview before confirming save
-- **Type:** UI / UX
-- **Priority:** P2
-- **Automate:** Yes
-
-**Steps:**
-
-1. Login as Lead, open `/kb`.
-2. Select an existing doc.
-3. Enter prompt and click “Generate update”.
-
-**Expected:**
-
-- Preview shows new title/text/tags
-- Confirm/save is a separate explicit action
-- Cancel leaves doc unchanged
-
----
-
-## Notes / Implementation Constraints
-
-- Atomicity tests should be unit-level if Databricks doesn’t support easy transactional semantics.
-- For LLM output tests, mock `lib/llm.ts` at unit level or intercept the server route call in API tests depending on your setup.

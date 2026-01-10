@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 import { requireLead } from '@/lib/roles';
 import { getById, updateDoc } from '@/lib/db.kb';
-import { updateKbEntryFromPrompt } from '@/lib/llm';
+import { updateKbEntryFromPrompt, isLlmOutputError } from '@/lib/llm';
 import { insertKbAudit } from '@/lib/db.audit';
 
 const UpdateKbSchema = z.object({
@@ -27,14 +27,15 @@ export async function POST(req: NextRequest) {
 
   const { id, prompt } = parsed.data;
 
+  // ✅ Pass mock mode from tests via header
+  const mockMode = req.headers.get('x-mock-llm');
+
   try {
-    // 1) Fetch existing (BEFORE)
     const existing = await getById(id);
     if (!existing) {
       return NextResponse.json({ error: 'KB doc not found' }, { status: 404 });
     }
 
-    // 2) LLM update (strict schema validation happens inside lib/llm.ts)
     const updated = await updateKbEntryFromPrompt(
       {
         id: existing.id,
@@ -43,16 +44,15 @@ export async function POST(req: NextRequest) {
         tags: existing.tags ?? [],
       },
       prompt,
+      { mockMode },
     );
 
-    // 3) Persist update (MORA update title/text/tags)
     await updateDoc(id, {
       title: updated.title,
       text: updated.text,
       tags: updated.tags,
     });
 
-    // 4) Audit (before/after)
     await insertKbAudit({
       actorUserId: auth.userId,
       changeType: 'UPDATE',
@@ -71,8 +71,13 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    return NextResponse.json({ id }, { status: 200 });
-  } catch {
+    return NextResponse.json({ success: true, id }, { status: 200 });
+  } catch (err) {
+    if (isLlmOutputError(err)) {
+      return NextResponse.json({ error: 'Invalid AI output' }, { status: 400 });
+    }
+
+    console.error('KB update failed:', err);
     return NextResponse.json({ error: 'KB update failed' }, { status: 500 });
   }
 }

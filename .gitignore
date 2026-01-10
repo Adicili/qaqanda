@@ -51,3 +51,5 @@ src/app/__qa_bad__.tsx
 # playwright
 playwright-report/
 test-results/
+# local file-based db
+.qaqanda/

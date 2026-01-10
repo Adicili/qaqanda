@@ -31,6 +31,7 @@ export async function POST(request: Request) {
   const { email, password } = result.data;
 
   const user = await dbUsers.getUserByEmail(email);
+  console.warn('[LOGIN] email=', email, 'role=', user?.role, 'id=', user?.id);
 
   if (!user || !user.passwordHash) {
     return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
