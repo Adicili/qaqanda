@@ -1,6 +1,7 @@
 // app/_components/AskHome.tsx
 'use client';
 
+import Link from 'next/link';
 import * as React from 'react';
 
 export default function AskHome() {
@@ -9,12 +10,35 @@ export default function AskHome() {
   const [error, setError] = React.useState<string | null>(null);
   const [answer, setAnswer] = React.useState<string | null>(null);
   const [context, setContext] = React.useState<any[]>([]);
+  const [role, setRole] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/me', { method: 'GET' });
+        const json = await res.json().catch(() => null);
+        if (!alive) return;
+        setRole(json?.role ?? null);
+      } catch {
+        if (!alive) return;
+        setRole(null);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const q = question.trim();
     if (!q) {
       setError('Question is required.');
+      setAnswer(null);
+      setContext([]);
       return;
     }
 
@@ -46,12 +70,51 @@ export default function AskHome() {
     }
   }
 
+  async function onLogout() {
+    const res = await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    const text = await res.text().catch(() => '');
+    console.warn('logout status:', res.status, 'body:', text);
+
+    // Ako nije 200 -> nema logout-a.
+    if (!res.ok) return;
+
+    window.location.href = '/login';
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-4 py-10">
       <section className="mx-auto w-full max-w-2xl rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-lg">
-        <h1 className="text-2xl font-semibold text-slate-50" data-test-id="ask-title">
-          Ask QAQ&amp;A
-        </h1>
+        <header className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-semibold text-slate-50" data-test-id="ask-title">
+            Ask QAQ&amp;A
+          </h1>
+
+          <nav className="flex items-center gap-4 text-sm">
+            {role === 'LEAD' && (
+              <Link
+                href="/kb"
+                className="text-slate-200 underline hover:text-slate-50"
+                data-test-id="nav-kb-link"
+              >
+                KB
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={onLogout}
+              className="text-slate-300 underline hover:text-slate-50"
+              data-test-id="nav-logout"
+            >
+              Logout
+            </button>
+          </nav>
+        </header>
 
         <form onSubmit={onSubmit} className="mt-5 space-y-3" noValidate>
           <label className="block text-sm font-medium text-slate-200" htmlFor="ask-question">

@@ -5,7 +5,8 @@ export type SqlParams = Record<string, string | number | boolean | null | undefi
 
 // --- MOCK MODE STATE (used when USE_DATABRICKS_MOCK = true) ---
 
-const useDatabricksMock = ENV.USE_DATABRICKS_MOCK === true;
+const useDatabricksMock =
+  ENV.STORAGE_MODE === 'databricks_mock' || ENV.USE_DATABRICKS_MOCK === true;
 
 type UserRow = {
   id: string;

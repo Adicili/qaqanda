@@ -8,6 +8,8 @@ const emptyToUndefined = (v: unknown) => {
 };
 
 const baseSchema = z.object({
+  STORAGE_MODE: z.enum(['local', 'databricks', 'databricks_mock']).optional(),
+
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 
   ADMIN_SECRET: z.preprocess(emptyToUndefined, z.string().min(32).optional()),
@@ -81,6 +83,8 @@ if (env.NODE_ENV === 'production' && !forceMock && !isCi) {
 }
 
 export const ENV = {
+  STORAGE_MODE: env.STORAGE_MODE,
+
   NODE_ENV: env.NODE_ENV,
   ADMIN_SECRET: env.ADMIN_SECRET,
 

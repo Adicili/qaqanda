@@ -17,12 +17,25 @@ export type DbUser = {
 
 const SCHEMA = 'workspace.qaqanda';
 
-const forceDatabricksMock = !!ENV.USE_DATABRICKS_MOCK;
+type StorageMode = 'local' | 'databricks' | 'databricks_mock';
 
-const hasDatabricksEnv =
-  !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
+function resolveStorageMode(): StorageMode {
+  // 1) Explicit wins
+  if (ENV.STORAGE_MODE) return ENV.STORAGE_MODE;
 
-const useDatabricks = hasDatabricksEnv || forceDatabricksMock;
+  // 2) Backward compat: old behavior
+  const forceMock = ENV.USE_DATABRICKS_MOCK === true;
+  const hasDatabricksEnv =
+    !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
+
+  if (forceMock) return 'databricks_mock';
+  if (hasDatabricksEnv) return 'databricks';
+  return 'local';
+}
+
+const STORAGE_MODE = resolveStorageMode();
+
+const useDatabricks = STORAGE_MODE === 'databricks' || STORAGE_MODE === 'databricks_mock';
 
 /**
  * -------------------------

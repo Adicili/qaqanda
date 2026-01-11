@@ -302,6 +302,119 @@ Ensure KB entry is not persisted if audit write fails.
 - Status `500 Internal Server Error`
 - KB entry not persisted (or behavior explicitly documented)
 
+### EP05-US01-TC11
+
+- **Test name:** Lead can access KB management page
+- **Type:** UI / Auth / Navigation
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI
+  - Spec file: `tests/ui/kb-ui.spec.ts`
+  - Test name: `EP05-US01-TC11 — lead can access /kb`
+
+**Description:**  
+Verify that a user with LEAD role can access the KB management UI.
+
+**Steps:**
+
+1. Login as LEAD user.
+2. Navigate to `/kb`.
+
+**Expected Result:**
+
+- Page loads successfully
+- KB prompt textarea is visible
+- “Generate” / “Add” action button is visible
+- No authorization or redirect errors
+
+---
+
+### EP05-US01-TC12
+
+- **Test name:** Non-Lead user cannot access KB management page
+- **Type:** UI / Security
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI
+  - Spec file: `tests/ui/kb-ui.spec.ts`
+  - Test name: `EP05-US01-TC12 — engineer blocked from /kb`
+
+**Description:**  
+Ensure only LEAD users can access the KB management UI.
+
+**Steps:**
+
+1. Login as ENGINEER user.
+2. Navigate to `/kb`.
+
+**Expected Result:**
+
+- Access denied (403 UI, redirect, or protected-route behavior)
+- KB management UI is not rendered
+- User is redirected or shown authorization error
+
+---
+
+### EP05-US01-TC13
+
+- **Test name:** Lead can add KB entry via UI (happy path)
+- **Type:** UI / End-to-End
+- **Priority:** P0
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI
+  - Spec file: `tests/ui/kb-ui.spec.ts`
+  - Test name: `EP05-US01-TC13 — lead add KB entry via UI`
+
+**Description:**  
+Verify that a LEAD user can successfully add a KB entry through the UI.
+
+**Steps:**
+
+1. Login as LEAD user.
+2. Navigate to `/kb`.
+3. Enter valid AI prompt in textarea.
+4. Click “Generate” / “Add”.
+5. Wait for successful response.
+
+**Expected Result:**
+
+- Success confirmation shown (toast or inline message)
+- New KB entry appears in the KB list
+- Entry title/text reflects generated content
+- Page remains stable (no reload or crash)
+
+---
+
+### EP05-US01-TC14
+
+- **Test name:** UI shows error when KB add fails
+- **Type:** UI / Error Handling
+- **Priority:** P1
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI
+  - Spec file: `tests/ui/kb-ui.spec.ts`
+  - Test name: `EP05-US01-TC14 — kb add error surfaced in UI`
+
+**Description:**  
+Ensure backend errors during KB creation are surfaced clearly in the UI.
+
+**Steps:**
+
+1. Login as LEAD user.
+2. Navigate to `/kb`.
+3. Mock `/api/kb/add` to return `400` or `500`.
+4. Enter prompt and submit.
+
+**Expected Result:**
+
+- Clear error message displayed to user
+- No KB entry added to list
+- UI remains usable after error
+
 ---
 
 ## EP05-US02 — Update Knowledge Base Entry via AI (`POST /api/kb/update`)
@@ -524,35 +637,62 @@ Ensure KB update is not persisted if audit write fails.
 
 ### EP05-US02-TC08
 
-- **Test name:** UI flow — update KB entry with preview
-- **Type:** UI
-- **Priority:** P2
+- **Test name:** Lead can update KB entry via UI
+- **Type:** UI / End-to-End
+- **Priority:** P1
 - **Automate:** Yes
 - **Automation:**
-  - Framework: Playwright UI tests
+  - Framework: Playwright UI
   - Spec file: `tests/ui/kb-ui.spec.ts`
-  - Test name: `EP05-US02-TC08 — update preview UX`
-  - Command:  
-    `pnpm test:ui -- -g "EP05-US02-TC08"`
+  - Test name: `EP05-US02-TC08 — lead update KB entry via UI`
 
 **Description:**  
-Verify UX flow for updating KB entries via AI.
+Verify that a LEAD user can update an existing KB entry using the UI.
+
+**Preconditions:**
+
+- At least one KB entry exists
 
 **Steps:**
 
-1. Login as Lead.
+1. Login as LEAD user.
 2. Navigate to `/kb`.
-3. Select existing KB entry.
-4. Enter prompt and generate update.
-5. Review preview.
-6. Confirm save.
+3. Select an existing KB entry.
+4. Enter update prompt.
+5. Click “Generate Update” / “Save”.
 
 **Expected Result:**
 
-- Preview shows updated title/text/tags
-- Save requires explicit confirmation
-- KB list reflects updated entry
+- Update succeeds with confirmation message
+- KB entry content reflects updated version
+- Updated entry visible in list/detail view
 
 ---
 
-## End of EP05 Test Cases
+### EP05-US02-TC09
+
+- **Test name:** UI shows error when KB update fails
+- **Type:** UI / Error Handling
+- **Priority:** P2
+- **Automate:** Yes
+- **Automation:**
+  - Framework: Playwright UI
+  - Spec file: `tests/ui/kb-ui.spec.ts`
+  - Test name: `EP05-US02-TC09 — kb update error surfaced in UI`
+
+**Description:**  
+Ensure backend errors during KB update do not corrupt UI state.
+
+**Steps:**
+
+1. Login as LEAD user.
+2. Navigate to `/kb`.
+3. Select an existing KB entry.
+4. Mock `/api/kb/update` to return `400` or `500`.
+5. Attempt update.
+
+**Expected Result:**
+
+- Error message displayed clearly
+- KB entry remains unchanged
+- UI remains stable and usable
