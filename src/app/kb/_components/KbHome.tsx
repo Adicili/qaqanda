@@ -115,28 +115,30 @@ export default function KbHome() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
-      <header className="flex items-start justify-between gap-4">
+    <main className="mx-auto max-w-3xl p-6" data-testid="kb-page">
+      <header className="flex items-start justify-between gap-4" data-testid="kb-header">
         <div>
-          <h1 className="text-2xl font-semibold">KB Management</h1>
-          <p className="mt-1 text-sm opacity-80">EP05 UI: Add and Update KB entries (LEAD only).</p>
+          <h1 className="text-2xl font-semibold" data-testid="kb-title">
+            KB Management
+          </h1>
+          <p className="mt-1 text-sm opacity-80" data-testid="kb-subtitle">
+            EP05 UI: Add and Update KB entries (LEAD only).
+          </p>
         </div>
 
-        <Link className="text-sm underline" href="/">
+        <Link className="text-sm underline" href="/" data-testid="kb-home-link">
           Home
         </Link>
       </header>
 
-      <div className="mt-6 grid gap-6">
+      <div className="mt-6 grid gap-6" data-testid="kb-content">
         {/* ADD */}
-        <section className="rounded-lg border p-4">
-          <h2 className="text-lg font-semibold">Add entry</h2>
-          <p className="mt-1 text-sm opacity-80">
-            Sends prompt to <code className="px-1">/api/kb/add</code> and stores the generated
-            entry.
-          </p>
+        <section className="rounded-lg border p-4" data-testid="kb-add-section">
+          <h2 className="text-lg font-semibold" data-testid="kb-add-title">
+            Add entry
+          </h2>
 
-          <form className="mt-4 grid gap-3" onSubmit={onAdd}>
+          <form className="mt-4 grid gap-3" onSubmit={onAdd} data-testid="kb-add-form">
             <label className="grid gap-1">
               <span className="text-sm font-medium">Prompt</span>
               <textarea
@@ -162,23 +164,22 @@ export default function KbHome() {
                 {addError}
               </Alert>
             )}
+
             {addOkId && (
-              <Alert kind="success" testId="kb-add-success">
-                Saved. New KB id: <code className="px-1">{addOkId}</code>
+              <Alert kind="success" data-testid="kb-add-success">
+                Saved. New KB id: <code data-testid="kb-add-id">{addOkId}</code>
               </Alert>
             )}
           </form>
         </section>
 
         {/* UPDATE */}
-        <section className="rounded-lg border p-4">
-          <h2 className="text-lg font-semibold">Update entry</h2>
-          <p className="mt-1 text-sm opacity-80">
-            Sends <code className="px-1">id</code> + <code className="px-1">prompt</code> to{' '}
-            <code className="px-1">/api/kb/update</code>.
-          </p>
+        <section className="rounded-lg border p-4" data-testid="kb-update-section">
+          <h2 className="text-lg font-semibold" data-testid="kb-update-title">
+            Update entry
+          </h2>
 
-          <form className="mt-4 grid gap-3" onSubmit={onUpdate}>
+          <form className="mt-4 grid gap-3" onSubmit={onUpdate} data-testid="kb-update-form">
             <label className="grid gap-1">
               <span className="text-sm font-medium">KB id</span>
               <input
@@ -215,20 +216,23 @@ export default function KbHome() {
                 {updError}
               </Alert>
             )}
+
             {updOkId && (
-              <Alert kind="success" testId="kb-update-success">
-                Updated. KB id: <code className="px-1">{updOkId}</code>
+              <Alert kind="success" data-testid="kb-update-success">
+                Updated KB id: <code data-testid="kb-update-id-value">{updOkId}</code>
               </Alert>
             )}
           </form>
         </section>
 
         {/* NOTE */}
-        <section className="rounded-lg border p-4">
-          <h3 className="text-base font-semibold">Note</h3>
-          <p className="mt-1 text-sm opacity-80">
-            API currently generates & saves immediately. If you want a preview/confirm flow, you
-            must add a preview endpoint (EP06+), otherwise this UI is as good as it gets for EP05.
+        <section className="rounded-lg border p-4" data-testid="kb-note-section">
+          <h3 className="text-base font-semibold" data-testid="kb-note-title">
+            Note
+          </h3>
+          <p className="mt-1 text-sm opacity-80" data-testid="kb-note-text">
+            API currently generates & saves immediately. Preview/confirm flow is intentionally
+            deferred to EP06+.
           </p>
         </section>
       </div>

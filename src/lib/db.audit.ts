@@ -2,7 +2,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { executeQuery } from '@/lib/databricksClient';
-import { ENV } from '@/lib/env';
+import { isDatabricksEnabled } from '@/lib/dbMode';
 import { readLocalDb, updateLocalDb } from '@/lib/localdb';
 
 const SCHEMA = 'workspace.qaqanda';
@@ -24,10 +24,6 @@ export type KbAuditRecord = {
   afterJson: string;
   createdAt: string; // ISO string (kept as string by design)
 };
-
-function isDbEnabled(): boolean {
-  return Boolean(ENV.DATABRICKS_HOST && ENV.DATABRICKS_TOKEN && ENV.DATABRICKS_WAREHOUSE_ID);
-}
 
 /**
  * -------------------------
@@ -81,7 +77,7 @@ export async function insertKbAudit(params: {
     createdAt,
   };
 
-  if (!isDbEnabled()) {
+  if (!isDatabricksEnabled()) {
     return insertKbAuditLocal(record);
   }
 
@@ -123,7 +119,7 @@ export async function insertKbAudit(params: {
  * Public read API for tests/debugging (no private __ helpers).
  */
 export async function listKbAuditByKbId(kbId: string, limit = 50): Promise<KbAuditRecord[]> {
-  if (!isDbEnabled()) return listKbAuditByKbIdLocal(kbId, limit);
+  if (!isDatabricksEnabled()) return listKbAuditByKbIdLocal(kbId, limit);
 
   const rows = await executeQuery<{
     id: string;

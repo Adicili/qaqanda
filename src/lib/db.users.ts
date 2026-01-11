@@ -1,7 +1,7 @@
 // src/lib/db.users.ts
 import crypto from 'crypto';
 
-import { ENV } from '@/lib/env';
+import { isDatabricksEnabled } from '@/lib/dbMode';
 import { executeQuery } from '@/lib/databricksClient';
 import { readLocalDb, updateLocalDb } from '@/lib/localdb';
 
@@ -17,26 +17,7 @@ export type DbUser = {
 
 const SCHEMA = 'workspace.qaqanda';
 
-type StorageMode = 'local' | 'databricks' | 'databricks_mock';
-
-function resolveStorageMode(): StorageMode {
-  // 1) Explicit wins
-  if (ENV.STORAGE_MODE) return ENV.STORAGE_MODE;
-
-  // 2) Backward compat: old behavior
-  const forceMock = ENV.USE_DATABRICKS_MOCK === true;
-  const hasDatabricksEnv =
-    !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN && !!ENV.DATABRICKS_WAREHOUSE_ID;
-
-  if (forceMock) return 'databricks_mock';
-  if (hasDatabricksEnv) return 'databricks';
-  return 'local';
-}
-
-const STORAGE_MODE = resolveStorageMode();
-
-const useDatabricks = STORAGE_MODE === 'databricks' || STORAGE_MODE === 'databricks_mock';
-
+const useDatabricks = isDatabricksEnabled();
 /**
  * -------------------------
  * Databricks-backed storage
