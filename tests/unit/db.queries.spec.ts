@@ -1,31 +1,55 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/env', () => ({
-  ENV: {
-    NODE_ENV: 'test',
-    SESSION_SECRET: 'test-secret',
-    DATABRICKS_HOST: 'https://dummy-databricks.example.com',
-    DATABRICKS_TOKEN: 'test-token',
-  },
-}));
-
 const executeQueryMock = vi.fn();
 
-vi.mock('@/lib/databricksClient', () => ({
-  executeQuery: (...args: unknown[]) => executeQueryMock(...args),
-}));
-
-import { insertQuery, getRecentByUser } from '@/lib/db.queries';
+type QueriesModule = typeof import('@/lib/db.queries');
 
 describe('EP03-US03 — QueryLog repository', () => {
-  beforeEach(() => {
+  let q: QueriesModule;
+
+  beforeEach(async () => {
     executeQueryMock.mockReset();
+
+    // ✅ očisti module cache da se import-time grane ponovo izračunaju
+    vi.resetModules();
+
+    // ✅ da env parser ne eksplodira (SESSION_SECRET min 32)
+    process.env.SESSION_SECRET = process.env.SESSION_SECRET ?? 'x'.repeat(32);
+
+    // ✅ forsiraj Databricks branch
+    vi.doMock('@/lib/dbMode', () => ({
+      isDatabricksEnabled: () => true,
+      isDatabricksMockEnabled: () => false,
+    }));
+
+    // ✅ mock executeQuery
+    vi.doMock('@/lib/databricksClient', () => ({
+      executeQuery: (...args: unknown[]) => executeQueryMock(...args),
+    }));
+
+    // (opciono) ako db.queries importuje ENV direktno
+    vi.doMock('@/lib/env', () => ({
+      ENV: {
+        NODE_ENV: 'test',
+        SESSION_SECRET: 'x'.repeat(32),
+        DATABRICKS_HOST: 'https://dummy-databricks.example.com',
+        DATABRICKS_TOKEN: 'test-token',
+        DATABRICKS_WAREHOUSE_ID: 'wh-123',
+        DB_MODE: 'databricks',
+        USE_DATABRICKS_MOCK: false,
+        LLM_MODE: 'mock',
+        MOCK_LLM_BAD: false,
+      },
+    }));
+
+    // ✅ import tek posle mockova
+    q = await import('@/lib/db.queries');
   });
 
   it('EP03-US03-TC08 — insertQuery uses parameterized INSERT', async () => {
     executeQueryMock.mockResolvedValueOnce([{ id: 'q-001' }]);
 
-    const id = await insertQuery('user-123', 'How to reset password?', 150);
+    const id = await q.insertQuery('user-123', 'How to reset password?', 150);
 
     expect(id).toBe('q-001');
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
@@ -61,7 +85,7 @@ describe('EP03-US03 — QueryLog repository', () => {
       },
     ]);
 
-    const logs = await getRecentByUser('user-123', 5);
+    const logs = await q.getRecentByUser('user-123', 5);
 
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
     const [sql, params] = executeQueryMock.mock.calls[0];
