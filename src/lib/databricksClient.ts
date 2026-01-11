@@ -1,12 +1,12 @@
 // src/lib/databricksClient.ts
+import { isDatabricksEnabled, isDatabricksMockEnabled } from '@/lib/dbMode';
 import { ENV } from '@/lib/env';
 
 export type SqlParams = Record<string, string | number | boolean | null | undefined>;
 
 // --- MOCK MODE STATE (used when USE_DATABRICKS_MOCK = true) ---
 
-const useDatabricksMock =
-  ENV.STORAGE_MODE === 'databricks_mock' || ENV.USE_DATABRICKS_MOCK === true;
+const useDatabricksMock = isDatabricksMockEnabled();
 
 type UserRow = {
   id: string;
@@ -395,6 +395,10 @@ export async function executeQuery<T = Record<string, unknown>>(
   if (useDatabricksMock) {
     // Use the final, interpolated SQL – easier to reason about in the mock
     return executeQueryMock<T>(finalSql, params);
+  }
+
+  if (!isDatabricksEnabled()) {
+    throw new DatabricksClientError('Databricks is disabled (DB_MODE=local)');
   }
 
   if (!ENV.DATABRICKS_HOST || !ENV.DATABRICKS_TOKEN || !ENV.DATABRICKS_WAREHOUSE_ID) {

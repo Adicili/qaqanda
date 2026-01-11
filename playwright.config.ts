@@ -9,6 +9,9 @@ const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 
 // Use isolated DB file for Playwright so local dev doesn't pollute tests
 const PLAYWRIGHT_DB_PATH = '.qaqanda/local-db.playwright.json';
+// Force Playwright runner + teardown to use the same DB path as the webServer
+process.env.LOCAL_DB_PATH = PLAYWRIGHT_DB_PATH;
+process.env.DB_MODE = 'local';
 
 export default defineConfig({
   testDir: 'tests',

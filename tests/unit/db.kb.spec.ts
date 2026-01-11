@@ -1,25 +1,49 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/env', () => ({
-  ENV: {
-    NODE_ENV: 'test',
-    SESSION_SECRET: 'test-secret',
-    DATABRICKS_HOST: 'https://dummy-databricks.example.com',
-    DATABRICKS_TOKEN: 'test-token',
-  },
-}));
-
 const executeQueryMock = vi.fn();
 
-vi.mock('@/lib/databricksClient', () => ({
-  executeQuery: (...args: unknown[]) => executeQueryMock(...args),
-}));
-
-import { getById, addDoc, updateDoc, listAll } from '@/lib/db.kb';
+type KbModule = typeof import('@/lib/db.kb');
 
 describe('EP03-US03 — KB repository', () => {
-  beforeEach(() => {
+  let kb: KbModule;
+
+  beforeEach(async () => {
     executeQueryMock.mockReset();
+
+    // ✅ bitno: očisti module cache
+    vi.resetModules();
+
+    // ✅ env nije ključan ovde, ali da ne pukne env parser (SESSION_SECRET)
+    process.env.SESSION_SECRET = process.env.SESSION_SECRET ?? 'x'.repeat(32);
+
+    // ✅ forsiraj Databricks branch (da repo ide preko executeQuery)
+    vi.doMock('@/lib/dbMode', () => ({
+      isDatabricksEnabled: () => true,
+      isDatabricksMockEnabled: () => false,
+    }));
+
+    // ✅ mock executeQuery
+    vi.doMock('@/lib/databricksClient', () => ({
+      executeQuery: (...args: unknown[]) => executeQueryMock(...args),
+    }));
+
+    // (opciono) ako db.kb importuje ENV direktno i traži nešto
+    vi.doMock('@/lib/env', () => ({
+      ENV: {
+        NODE_ENV: 'test',
+        SESSION_SECRET: 'x'.repeat(32),
+        DATABRICKS_HOST: 'https://dummy-databricks.example.com',
+        DATABRICKS_TOKEN: 'test-token',
+        DATABRICKS_WAREHOUSE_ID: 'wh-123',
+        DB_MODE: 'databricks',
+        USE_DATABRICKS_MOCK: false,
+        LLM_MODE: 'mock',
+        MOCK_LLM_BAD: false,
+      },
+    }));
+
+    // ✅ import tek POSLE mockova
+    kb = await import('@/lib/db.kb');
   });
 
   it('EP03-US03-TC04 — getById returns typed KB doc or null', async () => {
@@ -34,7 +58,7 @@ describe('EP03-US03 — KB repository', () => {
       },
     ]);
 
-    const doc = await getById('kb-001');
+    const doc = await kb.getById('kb-001');
 
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
     const [sql, params] = executeQueryMock.mock.calls[0];
@@ -53,23 +77,20 @@ describe('EP03-US03 — KB repository', () => {
 
     // case B: no rows -> null
     executeQueryMock.mockResolvedValueOnce([]);
-    const missing = await getById('kb-missing');
+    const missing = await kb.getById('kb-missing');
     expect(missing).toBeNull();
   });
 
   it('EP03-US03-TC05 — addDoc uses parameterized INSERT and returns generated id', async () => {
     executeQueryMock.mockResolvedValueOnce([]);
 
-    const id = await addDoc('Title', 'Body', ['tag1', 'tag2']);
+    const id = await kb.addDoc('Title', 'Body', ['tag1', 'tag2']);
 
-    // 1) ID postoji i izgleda kao KB id
     expect(typeof id).toBe('string');
     expect(id.startsWith('kb_')).toBe(true);
 
-    // 2) executeQuery je pozvan tačno jednom
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
 
-    // 3) SQL i parametri su ispravni
     const [sql, params] = executeQueryMock.mock.calls[0];
 
     expect(String(sql)).toContain('INSERT INTO');
@@ -82,7 +103,6 @@ describe('EP03-US03 — KB repository', () => {
     expect(params.title).toBe('Title');
     expect(params.text).toBe('Body');
 
-    // tags moraju biti JSON string
     expect(typeof params.tags).toBe('string');
     expect(params.tags).toBe(JSON.stringify(['tag1', 'tag2']));
   });
@@ -90,7 +110,7 @@ describe('EP03-US03 — KB repository', () => {
   it('EP03-US03-TC06 — updateDoc uses parameterized UPDATE', async () => {
     executeQueryMock.mockResolvedValueOnce([]);
 
-    await updateDoc('kb-001', 'New content');
+    await kb.updateDoc('kb-001', 'New content');
 
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
     const [sql, params] = executeQueryMock.mock.calls[0];
@@ -123,10 +143,11 @@ describe('EP03-US03 — KB repository', () => {
       },
     ]);
 
-    const docs = await listAll();
+    const docs = await kb.listAll();
 
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
     const [sql] = executeQueryMock.mock.calls[0];
+
     expect(String(sql)).toContain('SELECT');
     expect(String(sql)).toContain('FROM');
     expect(String(sql)).toContain('kb_docs');

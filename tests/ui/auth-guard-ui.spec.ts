@@ -1,4 +1,6 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test-fixtures';
+
+import { KbPage } from './pages/KbPage';
 
 import { ENV } from '@/lib/env';
 
@@ -27,15 +29,12 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection (UI)', () =>
   });
 
   /**
-   * Covers (future):
+   * Covers:
    * - UI behavior when ENGINEER tries to access `/kb`
    * - Redirect or error state for non-LEAD users on KB management UI
    *
-   * NOTE:
-   * - Test is currently blocked: no real `/kb` page or persistent roles.
-   * - Will be implemented after EP03/EP05 (DB + KB UI).
    */
-  test.fixme('EP02-US03-TC05 — ENGINEER accessing /kb is blocked', async () => {
+  test('EP02-US03-TC05 — ENGINEER accessing /kb is blocked', async ({ authedEngineerPage }) => {
     test
       .info()
       .annotations.push(
@@ -44,18 +43,14 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection (UI)', () =>
         { type: 'us', description: 'EP02-US02' },
       );
 
-    test.info().annotations.push({
-      type: 'blocked',
-      description: 'Requires real /kb UI + persistent ENGINEER/LEAD roles (EP03/EP05)',
-    });
+    const kbPage = new KbPage(authedEngineerPage);
 
-    // TODO (EP05):
-    // 1. Login as engineer@example.com
-    // 2. Navigate to /kb
-    // 3. Assert redirect or "access denied" UI, no KB management controls visible
+    await kbPage.open(`${BASE_URL}/kb`);
+
+    await expect(kbPage.kbForbidden).toHaveText('Forbidden: LEAD role required.');
   });
 
-  test.fixme('EP02-US03-TC07 — LEAD accessing /kb is allowed', async () => {
+  test('EP02-US03-TC07 — LEAD accessing /kb is allowed', async ({ authedLeadPage }) => {
     test
       .info()
       .annotations.push(
@@ -64,14 +59,13 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection (UI)', () =>
         { type: 'us', description: 'EP02-US03' },
       );
 
-    test.info().annotations.push({
-      type: 'blocked',
-      description: 'Requires real /kb UI + persistent LEAD roles (EP03/EP05)',
-    });
+    const kbPage = new KbPage(authedLeadPage);
 
-    // TODO kad budeš imao:
-    // 1. Login kao lead@example.com
-    // 2. page.goto(`${BASE_URL}/kb`);
-    // 3. expect KB management UI visible
+    await kbPage.open(`${BASE_URL}/kb`);
+
+    await expect(kbPage.kbTitle).toBeVisible();
+    await expect(kbPage.kbAddInput).toBeVisible();
+    await expect(kbPage.kbIdInput).toBeVisible();
+    await expect(kbPage.kbUpdateInput).toBeVisible();
   });
 });

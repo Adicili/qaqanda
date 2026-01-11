@@ -1,27 +1,42 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { ENV } from '@/lib/env';
-import {
-  executeQuery,
-  buildSqlWithParams,
-  DatabricksClientError,
-  DatabricksTimeoutError,
-} from '@/lib/databricksClient';
-
-vi.mock('@/lib/env', () => ({
-  ENV: {
-    DATABRICKS_HOST: 'https://dummy-databricks.example.com',
-    DATABRICKS_TOKEN: 'test-token',
-    DATABRICKS_WAREHOUSE_ID: 'test-warehouse-id',
-  },
-}));
-
 const globalAny: any = global;
 
 describe('EP03-US01 — DatabricksClient — buildSqlWithParams', () => {
-  it('EP03-US01-TC02 — replaces named params with escaped SQL values', () => {
+  beforeEach(async () => {
+    globalAny.fetch = vi.fn();
+
+    // ✅ UGASI mock branch
+    process.env.USE_DATABRICKS_MOCK = '0';
+
+    vi.resetModules();
+
+    // ✅ forsiraj da isDatabricksMockEnabled bude false i isDatabricksEnabled true
+    vi.doMock('@/lib/dbMode', () => ({
+      isDatabricksEnabled: () => true,
+      isDatabricksMockEnabled: () => false,
+    }));
+
+    // ✅ env mock da prođe config
+    vi.doMock('@/lib/env', () => ({
+      ENV: {
+        DATABRICKS_HOST: 'https://dummy-databricks.example.com',
+        DATABRICKS_TOKEN: 'test-token',
+        DATABRICKS_WAREHOUSE_ID: 'test-warehouse-id',
+      },
+    }));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('EP03-US01-TC02 — replaces named params with escaped SQL values', async () => {
+    vi.resetModules();
+    const mod = await import('@/lib/databricksClient');
+
     const sql = 'SELECT * FROM users WHERE email = :email AND active = :active';
-    const result = buildSqlWithParams(sql, {
+    const result = mod.buildSqlWithParams(sql, {
       email: "o'connor@example.com",
       active: true,
     });
@@ -31,17 +46,21 @@ describe('EP03-US01 — DatabricksClient — buildSqlWithParams', () => {
     );
   });
 
-  it('EP03-US01-TC03 — throws if a param in SQL has no value provided', () => {
-    const sql = 'SELECT * FROM users WHERE id = :id';
+  it('EP03-US01-TC03 — throws if a param in SQL has no value provided', async () => {
+    vi.resetModules();
+    const mod = await import('@/lib/databricksClient');
 
-    expect(() => buildSqlWithParams(sql, {})).toThrow(DatabricksClientError);
+    const sql = 'SELECT * FROM users WHERE id = :id';
+    expect(() => mod.buildSqlWithParams(sql, {} as any)).toThrow(mod.DatabricksClientError);
   });
 
-  it('EP03-US01-TC04 — throws if there are unused params', () => {
-    const sql = 'SELECT * FROM users WHERE id = :id';
+  it('EP03-US01-TC04 — throws if there are unused params', async () => {
+    vi.resetModules();
+    const mod = await import('@/lib/databricksClient');
 
+    const sql = 'SELECT * FROM users WHERE id = :id';
     expect(() =>
-      buildSqlWithParams(sql, {
+      mod.buildSqlWithParams(sql, {
         id: 1,
         email: 'unused@example.com',
       }),
@@ -59,6 +78,9 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC01 — sends authenticated POST request and maps rows for SELECT', async () => {
+    vi.resetModules();
+    const { executeQuery } = await import('@/lib/databricksClient');
+
     const mockResponse = {
       status: { state: 'FINISHED' },
       result: {
@@ -96,6 +118,7 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
 
     const body = JSON.parse(options.body);
     expect(body.statement).toContain('FROM users');
+
     expect(rows).toEqual([
       { id: '1', email: 'user1@example.com' },
       { id: '2', email: 'user2@example.com' },
@@ -103,12 +126,10 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC05 — retries on 5xx and eventually succeeds', async () => {
-    const mock500 = {
-      ok: false,
-      status: 500,
-      text: async () => 'Internal error',
-    };
+    vi.resetModules();
+    const { executeQuery } = await import('@/lib/databricksClient');
 
+    const mock500 = { ok: false, status: 500, text: async () => 'Internal error' };
     const mockOk = {
       ok: true,
       status: 200,
@@ -134,6 +155,9 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC06 — throws DatabricksTimeoutError on timeout and respects retries', async () => {
+    vi.resetModules();
+    const { executeQuery, DatabricksTimeoutError } = await import('@/lib/databricksClient');
+
     const abortError = new Error('Aborted');
     (abortError as any).name = 'AbortError';
 
@@ -147,6 +171,9 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC07 — throws DatabricksClientError on non-5xx failure', async () => {
+    vi.resetModules();
+    const { executeQuery, DatabricksClientError } = await import('@/lib/databricksClient');
+
     globalAny.fetch.mockResolvedValueOnce({
       ok: false,
       status: 400,
@@ -157,15 +184,15 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC08 — returns empty array for statements without result set (e.g. INSERT)', async () => {
+    vi.resetModules();
+    const { executeQuery } = await import('@/lib/databricksClient');
+
     globalAny.fetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
       json: async () => ({
         status: { state: 'FINISHED' },
-        result: {
-          schema: { columns: [] },
-          data_array: [],
-        },
+        result: { schema: { columns: [] }, data_array: [] },
       }),
     });
 
@@ -174,23 +201,39 @@ describe('EP03-US01 — DatabricksClient — executeQuery', () => {
   });
 
   it('EP03-US01-TC09 — fails fast when ENV is missing Databricks config', async () => {
-    const prevHost = (ENV as any).DATABRICKS_HOST;
-    const prevToken = (ENV as any).DATABRICKS_TOKEN;
-    const prevWarehouse = (ENV as any).DATABRICKS_WAREHOUSE_ID;
+    vi.resetModules();
 
-    // Simulate missing config
-    (ENV as any).DATABRICKS_HOST = undefined;
-    (ENV as any).DATABRICKS_TOKEN = undefined;
-    (ENV as any).DATABRICKS_WAREHOUSE_ID = undefined;
+    // Force real Databricks branch (not mock)
+    vi.doMock('@/lib/dbMode', () => ({
+      isDatabricksEnabled: () => true,
+      isDatabricksMockEnabled: () => false,
+    }));
+
+    // Missing config on purpose (but keep SESSION_SECRET valid)
+    vi.doMock('@/lib/env', () => ({
+      ENV: {
+        NODE_ENV: 'test',
+        SESSION_SECRET: 'x'.repeat(32),
+
+        // ✅ intentionally missing
+        DATABRICKS_HOST: undefined,
+        DATABRICKS_TOKEN: undefined,
+        DATABRICKS_WAREHOUSE_ID: undefined,
+
+        // whatever else might be referenced elsewhere
+        DB_MODE: 'databricks',
+        USE_DATABRICKS_MOCK: false,
+        LLM_MODE: 'mock',
+        MOCK_LLM_BAD: false,
+        BASE_URL: 'http://localhost:3000',
+      },
+    }));
+
+    const { executeQuery, DatabricksClientError } = await import('@/lib/databricksClient');
 
     await expect(executeQuery('SELECT 1')).rejects.toBeInstanceOf(DatabricksClientError);
 
     // ensure no HTTP call was made
     expect(globalAny.fetch).not.toHaveBeenCalled();
-
-    // restore original values so other tests are not affected
-    (ENV as any).DATABRICKS_HOST = prevHost;
-    (ENV as any).DATABRICKS_TOKEN = prevToken;
-    (ENV as any).DATABRICKS_WAREHOUSE_ID = prevWarehouse;
   });
 });

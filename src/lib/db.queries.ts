@@ -1,14 +1,15 @@
 // src/lib/db.queries.ts
 import { randomUUID } from 'node:crypto';
 
+import { isDatabricksEnabled } from './dbMode';
+
 import { executeQuery } from '@/lib/databricksClient';
-import { ENV } from '@/lib/env';
 import { readLocalDb, updateLocalDb } from '@/lib/localdb';
 
 const SCHEMA = 'workspace.qaqanda';
 
 // opet – isto kao db.users.ts
-const hasDatabricksEnv = !!ENV.DATABRICKS_HOST && !!ENV.DATABRICKS_TOKEN;
+const hasDatabricksEnv = isDatabricksEnabled();
 
 type DbQueryRow = {
   id: string;

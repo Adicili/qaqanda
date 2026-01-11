@@ -10,7 +10,7 @@ async function globalTeardown() {
 
   // Only allow deleting test DBs (safety belt)
   const normalized = dbPath.replace(/\\/g, '/');
-  if (!normalized.includes('/.qaqanda/local-db.playwright')) {
+  if (!normalized.endsWith('/.qaqanda/local-db.playwright.json')) {
     console.warn(`ℹ️ Skipping DB cleanup (not a playwright DB): ${dbPath}`);
     return;
   }

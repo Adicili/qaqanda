@@ -7,6 +7,20 @@ import { extractCookieFromSetCookie } from './cookies';
 
 const REGISTER_ENDPOINT = '/api/auth/register';
 const LOGIN_ENDPOINT = '/api/auth/login';
+const PROMOTE_ENDPOINT = '/api/admin/users/promote';
+
+export async function promoteUser(
+  request: APIRequestContext,
+  email: string,
+  role: 'LEAD' | 'ENGINEER',
+) {
+  const res = await request.post(PROMOTE_ENDPOINT, {
+    data: { email, role },
+    headers: { 'x-admin-secret': process.env.ADMIN_SECRET ?? '' },
+  });
+
+  expect(res.status(), 'promote must succeed').toBe(200);
+}
 
 /**
  * Ensures a test user exists.
@@ -24,6 +38,9 @@ export async function ensureUser(request: APIRequestContext, role: TestUserRole)
   });
 
   expect([200, 409]).toContain(res.status());
+  if (role === 'LEAD') {
+    await promoteUser(request, user.email, 'LEAD');
+  }
   return user;
 }
 
