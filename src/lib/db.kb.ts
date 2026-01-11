@@ -172,21 +172,20 @@ export async function addDoc(title: string, text: string, tags: string[]): Promi
 
   const id = `kb_${randomUUID()}`;
 
-  // EP03 test očekuje RETURNING id (mock vraća 'kb-xyz')
+  // Databricks SQL doesn't support RETURNING for INSERT (in this setup).
   const sql = `
     INSERT INTO ${SCHEMA}.kb_docs (id, title, text, tags, created_at, updated_at)
     VALUES (:id, :title, :text, :tags, current_timestamp(), current_timestamp())
-    RETURNING id
   `;
 
-  const rows = await executeQuery<{ id: string }>(sql, {
+  await executeQuery<never>(sql, {
     id,
     title,
     text,
     tags: JSON.stringify(tags),
   });
 
-  return rows[0]?.id ?? id;
+  return id;
 }
 
 // Overload 1 (EP03): update only text

@@ -8,6 +8,7 @@ export class AskPage extends BasePage {
   readonly askSubmit: Locator;
   readonly askAnswer: Locator;
   readonly askError: Locator;
+  readonly askLogout: Locator;
 
   constructor(page: Page) {
     super(page);
@@ -17,6 +18,7 @@ export class AskPage extends BasePage {
     this.askSubmit = this.locator('ask-submit');
     this.askAnswer = this.locator('ask-answer');
     this.askError = this.locator('ask-error');
+    this.askLogout = this.locator('nav-logout');
   }
 
   // --- ACTIONS ---

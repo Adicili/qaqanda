@@ -57,23 +57,32 @@ describe('EP03-US03 — KB repository', () => {
     expect(missing).toBeNull();
   });
 
-  it('EP03-US03-TC05 — addDoc uses parameterized INSERT and returns id', async () => {
-    executeQueryMock.mockResolvedValueOnce([{ id: 'kb-xyz' }]);
+  it('EP03-US03-TC05 — addDoc uses parameterized INSERT and returns generated id', async () => {
+    executeQueryMock.mockResolvedValueOnce([]);
 
     const id = await addDoc('Title', 'Body', ['tag1', 'tag2']);
 
-    expect(id).toBe('kb-xyz');
+    // 1) ID postoji i izgleda kao KB id
+    expect(typeof id).toBe('string');
+    expect(id.startsWith('kb_')).toBe(true);
+
+    // 2) executeQuery je pozvan tačno jednom
     expect(executeQueryMock).toHaveBeenCalledTimes(1);
 
+    // 3) SQL i parametri su ispravni
     const [sql, params] = executeQueryMock.mock.calls[0];
+
     expect(String(sql)).toContain('INSERT INTO');
     expect(String(sql)).toContain('kb_docs');
+    expect(String(sql)).toContain(':id');
     expect(String(sql)).toContain(':title');
     expect(String(sql)).toContain(':text');
     expect(String(sql)).toContain(':tags');
+
     expect(params.title).toBe('Title');
     expect(params.text).toBe('Body');
-    // tags treba da budu JSON string, ne array
+
+    // tags moraju biti JSON string
     expect(typeof params.tags).toBe('string');
     expect(params.tags).toBe(JSON.stringify(['tag1', 'tag2']));
   });

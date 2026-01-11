@@ -218,6 +218,9 @@ test.describe('EP04-US03 - Ask UI Page (UI)', () => {
     await askPage.open(BASE_URL);
 
     await authedEngineerPage.keyboard.press('Tab');
+    await expect(askPage.askLogout).toBeFocused();
+
+    await authedEngineerPage.keyboard.press('Tab');
     await expect(askPage.askInput).toBeFocused();
 
     await askPage.enterQuestion('what is our DoD');
