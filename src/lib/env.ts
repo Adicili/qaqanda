@@ -1,4 +1,4 @@
-// lib/env.ts
+/* lib/env.ts */
 import { z } from 'zod';
 
 const emptyToUndefined = (v: unknown) => {
@@ -18,10 +18,21 @@ const baseSchema = z.object({
   DATABRICKS_TOKEN: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
   DATABRICKS_WAREHOUSE_ID: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 
+  // Existing OpenAI var (still allowed / optional)
   OPENAI_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 
+  // ✅ OpenRouter (EP09)
+  OPENROUTER_API_KEY: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+  OPENROUTER_MODEL: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+  OPENROUTER_TEMPERATURE: z.coerce.number().min(0).max(2).default(0.2),
+
+  // App identity / URLs
   PORT: z.coerce.number().int().positive().optional(),
   BASE_URL: z.preprocess(emptyToUndefined, z.string().default('http://localhost:3000')),
+
+  // OpenRouter wants HTTP-Referer; we reuse BASE_URL for that.
+  // Keep APP_URL as an alias in case other parts of the code expect it.
+  APP_URL: z.preprocess(emptyToUndefined, z.string().optional()),
 
   LLM_MODE: z.enum(['mock', 'real']).default('mock'),
   MOCK_LLM_BAD: z.coerce.boolean().default(false),
@@ -82,6 +93,9 @@ if (env.NODE_ENV === 'production' && !forceMock && !isCi) {
   }
 }
 
+// Prefer APP_URL if set, otherwise fall back to BASE_URL
+const appUrl = (env.APP_URL?.trim() ? env.APP_URL : env.BASE_URL).trim();
+
 export const ENV = {
   NODE_ENV: env.NODE_ENV,
   ADMIN_SECRET: env.ADMIN_SECRET,
@@ -93,6 +107,12 @@ export const ENV = {
   DATABRICKS_WAREHOUSE_ID: env.DATABRICKS_WAREHOUSE_ID,
 
   OPENAI_API_KEY: env.OPENAI_API_KEY,
+
+  // ✅ OpenRouter (EP09)
+  OPENROUTER_API_KEY: env.OPENROUTER_API_KEY,
+  OPENROUTER_MODEL: env.OPENROUTER_MODEL,
+  OPENROUTER_TEMPERATURE: env.OPENROUTER_TEMPERATURE,
+  APP_URL: appUrl,
 
   PORT: env.PORT,
   BASE_URL: env.BASE_URL,

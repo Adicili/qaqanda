@@ -53,32 +53,26 @@ function applyMockModeOverride(mode: MockLLMMode | undefined): void {
   if (!mode || mode === 'ok') return;
 
   if (mode === 'throw') {
-    // This is a real server-ish failure
     throw new Error('Mock LLM threw');
   }
 
   if (mode === 'malformed') {
-    // Treated as "AI output invalid" (400)
     throw new LlmOutputError('Mock LLM output malformed');
   }
 
   if (mode === 'code_fence') {
-    // Treated as "AI output invalid" (400)
     throw new LlmOutputError('Mock LLM output code-fenced');
   }
 
   if (mode === 'schema_invalid') {
-    // We don't throw here yet; we want Zod to fail consistently in parsing stage.
     return;
   }
 }
 
 function mockGenerate(prompt: string, mockMode?: MockLLMMode): unknown {
-  // Header override first
   applyMockModeOverride(mockMode);
 
   if (mockMode === 'schema_invalid' || shouldReturnBadOutput()) {
-    // namerno pogrešno (tags nije niz) -> schema mora da pukne
     return { title: 'x', text: 'y', tags: 'not-an-array' };
   }
 
@@ -95,7 +89,7 @@ function mockUpdate(existing: ExistingKbDoc, prompt: string, mockMode?: MockLLMM
   applyMockModeOverride(mockMode);
 
   if (mockMode === 'schema_invalid' || shouldReturnBadOutput()) {
-    return { title: 123, text: [], tags: ['ok'] }; // schema fail (wrong types)
+    return { title: 123, text: [], tags: ['ok'] };
   }
 
   const cleanPrompt = prompt.trim().slice(0, 2000);
@@ -128,16 +122,32 @@ export async function generateKbEntryFromPrompt(
     try {
       return KbEntrySchema.parse(mockGenerate(p, mockMode));
     } catch (err) {
-      // If header override already marked it as invalid output, preserve it
       if (err instanceof LlmOutputError) throw err;
-
-      // Zod schema failure = invalid AI output (400)
       throw new LlmOutputError('Mock LLM output failed schema validation');
     }
   }
 
-  // EP09: real LLM call + parsing + schema validation
-  throw new Error('LLM real mode not implemented (EP09)');
+  // REAL MODE (EP09): OpenRouter call + strict JSON parse + Zod validation
+  const startedAt = Date.now();
+  try {
+    const raw = await callOpenRouter({
+      prompt: buildKbAddPrompt(p),
+    });
+
+    const parsed = strictJsonParse(raw);
+    return KbEntrySchema.parse(parsed);
+  } catch (err) {
+    console.error('[LLM ERROR]', {
+      provider: 'openrouter',
+      model: ENV.OPENROUTER_MODEL,
+      latency_ms: Date.now() - startedAt,
+      error: err,
+    });
+
+    // Any JSON/schema issue must be treated as invalid AI output (400 upstream)
+    if (err instanceof LlmOutputError) throw err;
+    throw new LlmOutputError('LLM output invalid');
+  }
 }
 
 /**
@@ -163,7 +173,121 @@ export async function updateKbEntryFromPrompt(
     }
   }
 
-  throw new Error('LLM real mode not implemented (EP09)');
+  // REAL MODE (EP09): OpenRouter call + strict JSON parse + Zod validation
+  const startedAt = Date.now();
+  try {
+    const raw = await callOpenRouter({
+      prompt: buildKbUpdatePrompt(existing, p),
+    });
+
+    const parsed = strictJsonParse(raw);
+    return KbEntrySchema.parse(parsed);
+  } catch (err) {
+    console.error('[LLM ERROR]', {
+      provider: 'openrouter',
+      model: ENV.OPENROUTER_MODEL,
+      latency_ms: Date.now() - startedAt,
+      error: err,
+    });
+
+    if (err instanceof LlmOutputError) throw err;
+    throw new LlmOutputError('LLM output invalid');
+  }
+}
+
+/* ----------------- OpenRouter REAL mode helpers ----------------- */
+
+async function callOpenRouter(arg: { prompt: string }): Promise<string> {
+  if (!ENV.OPENROUTER_API_KEY) {
+    throw new Error('OPENROUTER_API_KEY is missing');
+  }
+  if (!ENV.OPENROUTER_MODEL) {
+    throw new Error('OPENROUTER_MODEL is missing');
+  }
+
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${ENV.OPENROUTER_API_KEY}`,
+      'Content-Type': 'application/json',
+      'HTTP-Referer': ENV.APP_URL,
+      'X-Title': 'QAQ&A',
+    },
+    body: JSON.stringify({
+      model: ENV.OPENROUTER_MODEL,
+      temperature: ENV.OPENROUTER_TEMPERATURE,
+      max_tokens: 800,
+      messages: [
+        {
+          role: 'system',
+          content: 'Return ONLY valid JSON. No markdown. No code fences. No extra text.',
+        },
+        { role: 'user', content: arg.prompt },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`OpenRouter HTTP error ${res.status}`);
+  }
+
+  const json = await res.json();
+  const content = json?.choices?.[0]?.message?.content;
+
+  if (typeof content !== 'string' || !content.trim()) {
+    throw new Error('LLM response missing content');
+  }
+
+  return content.trim();
+}
+
+function strictJsonParse(raw: string): unknown {
+  const s = raw.trim();
+
+  // Reject markdown/code fences explicitly. Don’t be “helpful”.
+  if (s.startsWith('```') || s.includes('```')) {
+    throw new LlmOutputError('LLM output code-fenced');
+  }
+
+  try {
+    return JSON.parse(s);
+  } catch {
+    throw new LlmOutputError('LLM output malformed');
+  }
+}
+
+function buildKbAddPrompt(userPrompt: string): string {
+  return [
+    'Create a KB entry from the prompt below.',
+    'Output JSON with EXACT keys:',
+    '{ "title": "string", "text": "string", "tags": ["string"] }',
+    'Rules:',
+    '- tags must be an array of lowercase kebab-case strings',
+    '- no markdown, no code fences, JSON only',
+    '',
+    `PROMPT:\n${userPrompt}`,
+  ].join('\n');
+}
+
+function buildKbUpdatePrompt(existing: ExistingKbDoc, instruction: string): string {
+  return [
+    'Update the KB entry based on the instruction below.',
+    'Output JSON with EXACT keys:',
+    '{ "title": "string", "text": "string", "tags": ["string"] }',
+    'Rules:',
+    '- Keep the title unless instruction explicitly changes it',
+    '- tags must be an array of lowercase kebab-case strings',
+    '- no markdown, no code fences, JSON only',
+    '',
+    'EXISTING ENTRY:',
+    JSON.stringify(
+      { id: existing.id, title: existing.title, text: existing.text, tags: existing.tags },
+      null,
+      2,
+    ),
+    '',
+    `INSTRUCTION:\n${instruction}`,
+  ].join('\n');
 }
 
 /* ----------------- helpers ----------------- */
