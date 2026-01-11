@@ -4,6 +4,8 @@
 
 ## Internal QA & Knowledge Management tool built with **Next.js (App Router)**, **TypeScript**, **Databricks SQL Warehouse**, **Vitest**, and **Playwright**.
 
+---
+
 # 🧰 Prerequisites
 
 | Tool       | Version   |
@@ -32,7 +34,7 @@ pnpm dev
 
 App runs at: http://localhost:3000
 
-If Databricks env vars aren’t provided → repositories fallback to **in-memory storage**.
+If Databricks env vars aren’t provided → repositories fallback to **local file-based DB** (dev-safe, no external dependency).
 
 ## 3. Production build
 
@@ -46,13 +48,16 @@ pnpm build && pnpm start
 
 pnpm test:unit
 
-Uses Vitest, mocks Databricks API, no external dependencies.
+- Vitest
+- Deterministic execution
+- Databricks fully mocked
+- No network / infra dependency
 
 ---
 
 ## E2E / UI tests (Playwright)
 
-pnpm test:ui
+pnpm test:ui  
 pnpm test:api
 
 ---
@@ -72,9 +77,10 @@ Every commit must pass:
 - ESLint
 - Prettier
 - TypeScript strict mode
+- Unit tests
 - Playwright smoke tests
-- Folder structure rules
 - Env schema validation
+- Repository contract tests
 
 ### Required scripts
 
@@ -111,13 +117,11 @@ CI runs automatically on:
 5. Upload artifacts on failure (screenshots, traces, videos)
 6. Report final CI status (required for merge)
 
-A failing step **blocks merging** to ensure stability and quality.
+A failing step **blocks merging**.
 
 CI configuration file:
 
 .github/workflows/ci.yml
-
-This completes the implementation of **EP08-US01**.
 
 ---
 
@@ -129,12 +133,14 @@ This completes the implementation of **EP08-US01**.
  ├ db.users.ts → Users repository  
  ├ db.kb.ts → Knowledge Base repository  
  ├ db.queries.ts → Query Log repository  
+ ├ retrieval → TF-IDF ranking engine (EP04)  
+ ├ llm → LLM abstraction layer (EP05)  
 /schemas → Zod validation  
 /tests  
- /unit → Repository + client tests  
+ /unit → Repository + client + engine tests  
  /integration → Canary DB tests  
  /ui → Playwright E2E tests  
- /api → Future API-level tests
+ /api → Route-level tests
 
 ---
 
@@ -164,20 +170,96 @@ Domain-specific modules:
 - Knowledge Base
 - Query logs
 
-All repositories use `databricksClient`.  
-If ENV is missing → **automatic in-memory fallback**.
+All repositories share the same contract.  
+If ENV is missing → **local file-based DB fallback** (safe for dev & tests).
 
 ---
 
 # 🧪 EP03 — Tests Overview
 
 - CRUD repository tests
-- SQL parameterization
+- SQL parameterization validation
 - Retry + timeout handling
-- Schema mapping
+- Schema mapping correctness
 - Sensitive logging prevention
 
-Mocks ensure deterministic execution.
+All tests are deterministic and infra-free.
+
+---
+
+# 🧠 EP04 — Ask & Retrieval Engine
+
+### Scope
+
+EP04 introduces a **deterministic retrieval layer** used by the Ask pipeline.
+
+### Implemented Features
+
+- TF-IDF based ranking
+- Case-insensitive tokenization
+- Optional stopword filtering
+- Deterministic ordering with tie-breakers
+- Score normalization (0..1)
+- Empty query short-circuit
+
+### Test Coverage
+
+- Tokenization behavior
+- Ranking determinism
+- Edge cases (empty input)
+- Score boundaries
+
+---
+
+# 🤖 EP05 — Ask Pipeline & LLM Abstraction
+
+EP05 introduces the **question answering pipeline**, integrating retrieval with a pluggable LLM layer.
+
+### Architecture
+
+Ask flow:
+
+1. Authenticated request hits `/api/ask`
+2. Question validated via schema
+3. KB documents retrieved & ranked (EP04)
+4. Prompt assembled (question + context)
+5. LLM adapter invoked
+6. Answer + context returned
+7. Query logged with latency
+
+### LLM Abstraction
+
+The LLM layer is **fully isolated** behind an interface:
+
+- `mock` mode (default)
+- `real` mode (OpenAI-compatible)
+- Fault injection supported for tests
+
+Switching is controlled via ENV:
+
+LLM_MODE=mock | real
+MOCK_LLM_BAD=true | false
+
+### Guarantees
+
+- No LLM calls in unit tests
+- No external dependency in CI
+- Deterministic answers in mock mode
+- Generic error handling (no leakage)
+
+---
+
+# 🧪 EP05 — Test Coverage
+
+- Route-level tests for `/api/ask`
+- Auth enforcement
+- Validation errors (400)
+- Internal failures (500)
+- Empty KB handling
+- Latency measurement
+- Query logging side-effects
+
+LLM behavior is mocked → zero flakiness.
 
 ---
 
@@ -196,12 +278,17 @@ Skipped in CI; executed manually or scheduled.
 # 🔐 Environment
 
 SESSION_SECRET="---"  
+DB_MODE="local | databricks"
+
 DATABRICKS_HOST="https://XXX.databricks.cloud"  
 DATABRICKS_TOKEN="dapiXXXX"  
 DATABRICKS_WAREHOUSE_ID="XXXX"
 
-Missing ENV → in-memory DB fallback.  
-No credentials logged by design.
+LLM_MODE="mock | real"  
+OPENAI_API_KEY="sk-..."
+
+Missing ENV → safe local fallback.  
+No credentials are ever logged.
 
 ---
 
@@ -210,7 +297,7 @@ No credentials logged by design.
 pnpm dev — Local server  
 pnpm build — Production build  
 pnpm test:unit — Unit + repository tests  
-pnpm playwright — Full UI suite  
+pnpm test:ui — Full UI suite  
 pnpm test:canary — Live Databricks tests  
 pnpm lint — ESLint  
 pnpm format — Prettier  
@@ -221,7 +308,7 @@ pnpm tsc --noEmit — Strict TypeScript checking
 # 📘 Notes
 
 - Architecture is **QA-first**, not feature-first
-- Strong typing and DB abstraction
-- Integrated CI pipeline ensures baseline quality
-- Canary tests prevent DB contract regressions
-- Ideal for **QA Automation Portfolio**
+- Deterministic by default
+- Infra isolated behind contracts
+- CI-safe, audit-friendly
+- Designed as a **serious QA Automation portfolio project**
