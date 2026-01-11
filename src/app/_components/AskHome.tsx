@@ -105,6 +105,16 @@ export default function AskHome() {
               </Link>
             )}
 
+            {(role === 'ENGINEER' || role === 'LEAD') && (
+              <Link
+                href="/reports"
+                className="text-slate-200 underline hover:text-slate-50"
+                data-test-id="nav-reports-link"
+              >
+                Reports
+              </Link>
+            )}
+
             <button
               type="button"
               onClick={onLogout}
