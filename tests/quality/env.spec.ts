@@ -20,7 +20,7 @@ describe('EP01-US03 - Environment Variable Validation', () => {
     const txt = readFileSync(p, 'utf8');
 
     // Must include keys with an equals sign (placeholders allowed to be empty)
-    const required = ['DATABRICKS_HOST', 'DATABRICKS_TOKEN', 'OPENAI_API_KEY'];
+    const required = ['DATABRICKS_HOST', 'DATABRICKS_TOKEN', 'OPENROUTER_API_KEY'];
     for (const key of required) {
       const re = new RegExp(`^\\s*${key}\\s*=`, 'm');
       expect(re.test(txt)).toBe(true);
