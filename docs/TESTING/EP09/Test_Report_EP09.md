@@ -321,29 +321,16 @@ Validation of AI-assisted KB **add/update** flows, including:
 
 ---
 
-### EP09-US03-TC10 — Atomicity
-
-**Result:** SKIPPED (documented)
-
-**Reason:**
-
-- Requires explicit backend failure hook
-- Requires transactional semantics
-- Skipped to avoid false confidence
-
----
-
 ### US03 Summary
 
-| Test Case | Description              | Result  |
-| --------- | ------------------------ | ------- |
-| TC01      | KB add with AI           | PASS    |
-| TC02      | KB update with AI        | PASS    |
-| TC03      | Invalid AI blocks add    | PASS    |
-| TC04      | Invalid AI blocks update | PASS    |
-| TC05      | Permissions enforced     | PASS    |
-| TC06      | Audit metadata recorded  | PASS    |
-| TC10      | Atomicity                | SKIPPED |
+| Test Case | Description              | Result |
+| --------- | ------------------------ | ------ |
+| TC01      | KB add with AI           | PASS   |
+| TC02      | KB update with AI        | PASS   |
+| TC03      | Invalid AI blocks add    | PASS   |
+| TC04      | Invalid AI blocks update | PASS   |
+| TC05      | Permissions enforced     | PASS   |
+| TC06      | Audit metadata recorded  | PASS   |
 
 **US03 Status:** Completed (with explicit exclusion)
 
