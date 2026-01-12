@@ -99,7 +99,8 @@ export async function POST(req: NextRequest) {
         model: null,
         latency_ms: 0,
         success: false,
-        error: err?.message ?? String(err),
+        total_tokens: null,
+        error: err instanceof Error ? err.message : String(err),
       });
 
       return NextResponse.json({ error: 'Invalid AI output' }, { status: 400 });
