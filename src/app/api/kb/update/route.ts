@@ -6,11 +6,17 @@ import { requireLead } from '@/lib/roles';
 import { getById, updateDoc } from '@/lib/db.kb';
 import { updateKbEntryFromPrompt, isLlmOutputError } from '@/lib/llm';
 import { insertKbAudit } from '@/lib/db.audit';
+import { logLLMMetrics, logError } from '@/lib/logger';
+import { ENV } from '@/lib/env';
 
 const UpdateKbSchema = z.object({
   id: z.string().trim().min(1, 'id is required'),
   prompt: z.string().trim().min(1, 'prompt is required').max(10_000, 'prompt too long'),
 });
+
+function allowTestHooks(): boolean {
+  return ENV.NODE_ENV === 'test';
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireLead();
@@ -27,8 +33,8 @@ export async function POST(req: NextRequest) {
 
   const { id, prompt } = parsed.data;
 
-  // ✅ Pass mock mode from tests via header
-  const mockMode = req.headers.get('x-mock-llm');
+  // ✅ Allow mock header only in tests
+  const mockMode = allowTestHooks() ? req.headers.get('x-mock-llm') : null;
 
   try {
     const existing = await getById(id);
@@ -46,6 +52,15 @@ export async function POST(req: NextRequest) {
       prompt,
       { mockMode },
     );
+
+    // ✅ Metrics logging (no prompt/raw output)
+    logLLMMetrics({
+      route: '/api/kb/update',
+      model: updated._meta.model,
+      latency_ms: updated._meta.latency_ms,
+      success: true,
+      total_tokens: updated._meta.total_tokens,
+    });
 
     await updateDoc(id, {
       title: updated.title,
@@ -69,15 +84,29 @@ export async function POST(req: NextRequest) {
         text: updated.text,
         tags: updated.tags,
       }),
+
+      // ✅ EP09-US03 audit fields
+      llmModel: updated._meta.model,
+      llmLatencyMs: updated._meta.latency_ms,
+      llmTotalTokens: updated._meta.total_tokens,
     });
 
     return NextResponse.json({ success: true, id }, { status: 200 });
-  } catch (err) {
+  } catch (err: any) {
     if (isLlmOutputError(err)) {
+      logLLMMetrics({
+        route: '/api/kb/update',
+        model: null,
+        latency_ms: 0,
+        success: false,
+        total_tokens: null,
+        error: err instanceof Error ? err.message : String(err),
+      });
+
       return NextResponse.json({ error: 'Invalid AI output' }, { status: 400 });
     }
 
-    console.error('KB update failed:', err);
+    logError('KB update failed', { error: err?.message ?? String(err) });
     return NextResponse.json({ error: 'KB update failed' }, { status: 500 });
   }
 }

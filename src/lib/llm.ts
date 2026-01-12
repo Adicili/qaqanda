@@ -15,12 +15,34 @@ export type ExistingKbDoc = {
 
 export type MockLLMMode = 'malformed' | 'schema_invalid' | 'code_fence' | 'throw' | 'ok';
 
+export type LlmMeta = {
+  provider: 'openrouter' | 'mock';
+  model: string | null;
+  latency_ms: number;
+  total_tokens: number | null;
+};
+
+export type KbEntryWithMeta = KbEntry & { _meta: LlmMeta };
+
+export type AskContextDoc = {
+  id: string;
+  title: string;
+  text: string;
+};
+
+export type AskAnswerWithMeta = { answer: string; _meta: LlmMeta };
+
 class LlmOutputError extends Error {
   name = 'LlmOutputError';
 }
 
 export function isLlmOutputError(err: unknown): boolean {
   return err instanceof LlmOutputError;
+}
+
+function allowTestHooks(): boolean {
+  // Prevent external users from forcing mock behavior via headers
+  return ENV.NODE_ENV === 'test';
 }
 
 function normalizeMockMode(v: unknown): MockLLMMode | undefined {
@@ -44,7 +66,7 @@ function shouldReturnBadOutput(): boolean {
 }
 
 /**
- * Header-driven mock overrides:
+ * Header-driven mock overrides (test-only):
  * - malformed: simulate non-JSON / unparsable output
  * - schema_invalid: return wrong shape (Zod must fail)
  * - code_fence: simulate ```json ... ``` (reject)
@@ -106,38 +128,57 @@ function mockUpdate(existing: ExistingKbDoc, prompt: string, mockMode?: MockLLMM
 }
 
 /**
- * Public API: Add flow
+ * Public API: Add flow (returns meta for audit/metrics)
  */
 export async function generateKbEntryFromPrompt(
   prompt: string,
   opts?: { mockMode?: string | null },
-): Promise<KbEntry> {
+): Promise<KbEntryWithMeta> {
   const p = prompt?.trim() ?? '';
   if (!p) {
     throw new Error('Prompt is required');
   }
 
   const mode = getMode();
-  const mockMode = normalizeMockMode(opts?.mockMode);
+  const mockMode = allowTestHooks() ? normalizeMockMode(opts?.mockMode) : undefined;
 
   if (mode === 'mock') {
+    const startedAt = Date.now();
     try {
-      return KbEntrySchema.parse(mockGenerate(p, mockMode));
+      const entry = KbEntrySchema.parse(mockGenerate(p, mockMode));
+      return {
+        ...entry,
+        _meta: {
+          provider: 'mock',
+          model: 'mock',
+          latency_ms: Date.now() - startedAt,
+          total_tokens: null,
+        },
+      };
     } catch (err) {
       if (err instanceof LlmOutputError) throw err;
       throw new LlmOutputError('Mock LLM output failed schema validation');
     }
   }
 
-  // REAL MODE (EP09): OpenRouter call + strict JSON parse + Zod validation
   const startedAt = Date.now();
   try {
-    const raw = await callOpenRouter({
+    const { content, model, total_tokens } = await callOpenRouter({
       prompt: buildKbAddPrompt(p),
     });
 
-    const parsed = strictJsonParse(raw);
-    return KbEntrySchema.parse(parsed);
+    const parsed = strictJsonParse(content);
+    const entry = KbEntrySchema.parse(parsed);
+
+    return {
+      ...entry,
+      _meta: {
+        provider: 'openrouter',
+        model,
+        latency_ms: Date.now() - startedAt,
+        total_tokens,
+      },
+    };
   } catch (err) {
     console.error('[LLM ERROR]', {
       provider: 'openrouter',
@@ -146,44 +187,62 @@ export async function generateKbEntryFromPrompt(
       error: err,
     });
 
-    // Any JSON/schema issue must be treated as invalid AI output (400 upstream)
     if (err instanceof LlmOutputError) throw err;
     throw new LlmOutputError('LLM output invalid');
   }
 }
 
 /**
- * Public API: Update flow
+ * Public API: Update flow (returns meta for audit/metrics)
  */
 export async function updateKbEntryFromPrompt(
   existing: ExistingKbDoc,
   prompt: string,
   opts?: { mockMode?: string | null },
-): Promise<KbEntry> {
+): Promise<KbEntryWithMeta> {
   const p = prompt?.trim() ?? '';
   if (!p) throw new Error('Prompt is required');
 
   const mode = getMode();
-  const mockMode = normalizeMockMode(opts?.mockMode);
+  const mockMode = allowTestHooks() ? normalizeMockMode(opts?.mockMode) : undefined;
 
   if (mode === 'mock') {
+    const startedAt = Date.now();
     try {
-      return KbEntrySchema.parse(mockUpdate(existing, p, mockMode));
+      const entry = KbEntrySchema.parse(mockUpdate(existing, p, mockMode));
+      return {
+        ...entry,
+        _meta: {
+          provider: 'mock',
+          model: 'mock',
+          latency_ms: Date.now() - startedAt,
+          total_tokens: null,
+        },
+      };
     } catch (err) {
       if (err instanceof LlmOutputError) throw err;
       throw new LlmOutputError('Mock LLM output failed schema validation');
     }
   }
 
-  // REAL MODE (EP09): OpenRouter call + strict JSON parse + Zod validation
   const startedAt = Date.now();
   try {
-    const raw = await callOpenRouter({
+    const { content, model, total_tokens } = await callOpenRouter({
       prompt: buildKbUpdatePrompt(existing, p),
     });
 
-    const parsed = strictJsonParse(raw);
-    return KbEntrySchema.parse(parsed);
+    const parsed = strictJsonParse(content);
+    const entry = KbEntrySchema.parse(parsed);
+
+    return {
+      ...entry,
+      _meta: {
+        provider: 'openrouter',
+        model,
+        latency_ms: Date.now() - startedAt,
+        total_tokens,
+      },
+    };
   } catch (err) {
     console.error('[LLM ERROR]', {
       provider: 'openrouter',
@@ -199,7 +258,9 @@ export async function updateKbEntryFromPrompt(
 
 /* ----------------- OpenRouter REAL mode helpers ----------------- */
 
-async function callOpenRouter(arg: { prompt: string }): Promise<string> {
+async function callOpenRouter(arg: {
+  prompt: string;
+}): Promise<{ content: string; model: string | null; total_tokens: number | null }> {
   if (!ENV.OPENROUTER_API_KEY) {
     throw new Error('OPENROUTER_API_KEY is missing');
   }
@@ -240,7 +301,12 @@ async function callOpenRouter(arg: { prompt: string }): Promise<string> {
     throw new Error('LLM response missing content');
   }
 
-  return content.trim();
+  const model: string | null =
+    typeof json?.model === 'string' ? json.model : (ENV.OPENROUTER_MODEL ?? null);
+  const total_tokens: number | null =
+    typeof json?.usage?.total_tokens === 'number' ? json.usage.total_tokens : null;
+
+  return { content: content.trim(), model, total_tokens };
 }
 
 function strictJsonParse(raw: string): unknown {
@@ -329,13 +395,8 @@ function dedupeTags(tags: string[]): string[] {
 
   return Array.from(new Set(clean));
 }
-// --- EP09-US02 additions (ASK) ---
 
-export type AskContextDoc = {
-  id: string;
-  title: string;
-  text: string;
-};
+/* ----------------- EP09-US02 additions (ASK) ----------------- */
 
 const AskAnswerSchema = z
   .object({
@@ -387,24 +448,32 @@ function mockAskAnswer(
 
 /**
  * EP09-US02: LLM answer using top context docs.
- * - Strict JSON only
- * - Zod validated
- * - Supports x-mock-llm for deterministic tests
+ * Returns meta for logging.
  */
 export async function answerQuestionFromContext(
   question: string,
   contextDocs: AskContextDoc[],
   opts?: { mockMode?: string | null },
-): Promise<{ answer: string }> {
+): Promise<AskAnswerWithMeta> {
   const q = question?.trim() ?? '';
   if (!q) throw new Error('Question is required');
 
   const mode = getMode();
-  const mockMode = normalizeMockMode(opts?.mockMode);
+  const mockMode = allowTestHooks() ? normalizeMockMode(opts?.mockMode) : undefined;
 
   if (mode === 'mock') {
+    const startedAt = Date.now();
     try {
-      return AskAnswerSchema.parse(mockAskAnswer(q, contextDocs, mockMode));
+      const parsed = AskAnswerSchema.parse(mockAskAnswer(q, contextDocs, mockMode));
+      return {
+        ...parsed,
+        _meta: {
+          provider: 'mock',
+          model: 'mock',
+          latency_ms: Date.now() - startedAt,
+          total_tokens: null,
+        },
+      };
     } catch (err) {
       if (err instanceof LlmOutputError) throw err;
       throw new LlmOutputError('Mock LLM output failed schema validation');
@@ -413,12 +482,22 @@ export async function answerQuestionFromContext(
 
   const startedAt = Date.now();
   try {
-    const raw = await callOpenRouter({
+    const { content, model, total_tokens } = await callOpenRouter({
       prompt: buildAskPrompt(q, contextDocs),
     });
 
-    const parsed = strictJsonParse(raw);
-    return AskAnswerSchema.parse(parsed);
+    const parsed = strictJsonParse(content);
+    const out = AskAnswerSchema.parse(parsed);
+
+    return {
+      ...out,
+      _meta: {
+        provider: 'openrouter',
+        model,
+        latency_ms: Date.now() - startedAt,
+        total_tokens,
+      },
+    };
   } catch (err) {
     console.error('[LLM ERROR]', {
       provider: 'openrouter',

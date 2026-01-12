@@ -15,7 +15,7 @@
     "test:unit": "vitest run --config vitest.unit.config.ts --reporter=verbose",
     "test:unit:watch": "vitest --config vitest.unit.config.ts",
     "test:ui": "playwright test --project=ui",
-    "test:api": "playwright test --project=api",
+    "test:api": "cross-env NODE_ENV=test playwright test --project=api",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
     "seed:databricks": "cross-env USE_DATABRICKS_MOCK=false DOTENV_CONFIG_PATH=.env.local tsx -r dotenv/config scripts/seedDatabricks.ts",

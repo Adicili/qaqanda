@@ -23,6 +23,11 @@ export type KbAuditRecord = {
   beforeJson: string | null;
   afterJson: string;
   createdAt: string; // ISO string (kept as string by design)
+
+  // ✅ EP09-US03: LLM metadata
+  llmModel: string | null;
+  llmLatencyMs: number | null;
+  llmTotalTokens: number | null;
 };
 
 /**
@@ -63,6 +68,11 @@ export async function insertKbAudit(params: {
   kbId: string;
   beforeJson: string | null;
   afterJson: string;
+
+  // ✅ EP09-US03: required by acceptance criteria
+  llmModel?: string | null;
+  llmLatencyMs?: number | null;
+  llmTotalTokens?: number | null;
 }): Promise<string> {
   const auditId = `audit_${randomUUID()}`;
   const createdAt = new Date().toISOString();
@@ -75,6 +85,10 @@ export async function insertKbAudit(params: {
     beforeJson: params.beforeJson,
     afterJson: params.afterJson,
     createdAt,
+
+    llmModel: params.llmModel ?? null,
+    llmLatencyMs: params.llmLatencyMs ?? null,
+    llmTotalTokens: params.llmTotalTokens ?? null,
   };
 
   if (!isDatabricksEnabled()) {
@@ -90,7 +104,11 @@ export async function insertKbAudit(params: {
       kb_id,
       before_json,
       after_json,
-      created_at
+      created_at,
+
+      llm_model,
+      llm_latency_ms,
+      llm_total_tokens
     )
     VALUES (
       :id,
@@ -99,7 +117,11 @@ export async function insertKbAudit(params: {
       :kb_id,
       :before_json,
       :after_json,
-      CURRENT_TIMESTAMP()
+      CURRENT_TIMESTAMP(),
+
+      :llm_model,
+      :llm_latency_ms,
+      :llm_total_tokens
     )
     `,
     {
@@ -109,6 +131,10 @@ export async function insertKbAudit(params: {
       kb_id: params.kbId,
       before_json: params.beforeJson,
       after_json: params.afterJson,
+
+      llm_model: params.llmModel ?? null,
+      llm_latency_ms: params.llmLatencyMs ?? null,
+      llm_total_tokens: params.llmTotalTokens ?? null,
     },
   );
 
@@ -129,6 +155,10 @@ export async function listKbAuditByKbId(kbId: string, limit = 50): Promise<KbAud
     before_json: string | null;
     after_json: string;
     created_at: string;
+
+    llm_model: string | null;
+    llm_latency_ms: number | null;
+    llm_total_tokens: number | null;
   }>(
     `
     SELECT
@@ -138,7 +168,11 @@ export async function listKbAuditByKbId(kbId: string, limit = 50): Promise<KbAud
       kb_id,
       before_json,
       after_json,
-      created_at
+      created_at,
+
+      llm_model,
+      llm_latency_ms,
+      llm_total_tokens
     FROM ${SCHEMA}.kb_audit
     WHERE kb_id = :kbId
     ORDER BY created_at DESC
@@ -155,5 +189,9 @@ export async function listKbAuditByKbId(kbId: string, limit = 50): Promise<KbAud
     beforeJson: r.before_json,
     afterJson: r.after_json,
     createdAt: r.created_at,
+
+    llmModel: r.llm_model ?? null,
+    llmLatencyMs: r.llm_latency_ms ?? null,
+    llmTotalTokens: r.llm_total_tokens ?? null,
   }));
 }
