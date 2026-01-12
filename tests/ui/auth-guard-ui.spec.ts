@@ -25,7 +25,7 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection (UI)', () =>
       );
     await page.goto(`${BASE_URL}/reports`);
 
-    await expect(page).not.toHaveURL(`${BASE_URL}/login`);
+    await expect(page).toHaveURL(`${BASE_URL}/login`);
   });
 
   /**

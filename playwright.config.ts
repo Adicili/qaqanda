@@ -9,6 +9,7 @@ const BASE_URL = process.env.BASE_URL ?? `http://localhost:${PORT}`;
 
 // Use isolated DB file for Playwright so local dev doesn't pollute tests
 const PLAYWRIGHT_DB_PATH = '.qaqanda/local-db.playwright.json';
+
 // Force Playwright runner + teardown to use the same DB path as the webServer
 process.env.LOCAL_DB_PATH = PLAYWRIGHT_DB_PATH;
 process.env.DB_MODE = 'local';
@@ -63,6 +64,11 @@ export default defineConfig({
 
       // ✅ Force file DB for tests
       LOCAL_DB_PATH: PLAYWRIGHT_DB_PATH,
+      DB_MODE: 'local',
+
+      // ✅ Force LLM mock mode for ALL Playwright runs (prevents external calls / flake)
+      LLM_MODE: 'mock',
+      MOCK_LLM_BAD: 'false',
 
       // ✅ Disable Databricks in tests (no flake)
       USE_DATABRICKS_MOCK: 'false',

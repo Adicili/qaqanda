@@ -67,7 +67,24 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    // This should *not* be happening silently.
+    const msg = String((error as any)?.message ?? '').toLowerCase();
+
+    // ✅ Handle race: user created between check and insert
+    if (
+      msg.includes('user already exists') ||
+      msg.includes('already exists') ||
+      msg.includes('exists')
+    ) {
+      return NextResponse.json(
+        {
+          errors: {
+            email: ['Email already in use'],
+          },
+        },
+        { status: 409 },
+      );
+    }
+
     console.error('Register API error:', error);
 
     return NextResponse.json(

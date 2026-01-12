@@ -35,7 +35,15 @@ const baseSchema = z.object({
   APP_URL: z.preprocess(emptyToUndefined, z.string().optional()),
 
   LLM_MODE: z.enum(['mock', 'real']).default('mock'),
-  MOCK_LLM_BAD: z.coerce.boolean().default(false),
+  MOCK_LLM_BAD: z
+    .union([z.string(), z.boolean(), z.number()])
+    .transform((v) => {
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'number') return v !== 0;
+      const s = String(v).toLowerCase().trim();
+      return s === '1' || s === 'true' || s === 'yes';
+    })
+    .default(false),
 
   CI: z
     .union([z.string(), z.boolean(), z.number()])
