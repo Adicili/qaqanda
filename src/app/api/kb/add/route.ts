@@ -6,10 +6,16 @@ import { requireLead } from '@/lib/roles';
 import { addDoc } from '@/lib/db.kb';
 import { generateKbEntryFromPrompt, isLlmOutputError } from '@/lib/llm';
 import { insertKbAudit } from '@/lib/db.audit';
+import { logLLMMetrics, logError } from '@/lib/logger';
+import { ENV } from '@/lib/env';
 
 const AddKbSchema = z.object({
   prompt: z.string().trim().min(1, 'prompt is required').max(10_000, 'prompt too long'),
 });
+
+function allowTestHooks(): boolean {
+  return ENV.NODE_ENV === 'test';
+}
 
 export async function POST(req: NextRequest) {
   const auth = await requireLead();
@@ -26,11 +32,20 @@ export async function POST(req: NextRequest) {
 
   const { prompt } = parsed.data;
 
-  // ✅ Pass mock mode from tests via header
-  const mockMode = req.headers.get('x-mock-llm');
+  // ✅ Allow mock header only in tests
+  const mockMode = allowTestHooks() ? req.headers.get('x-mock-llm') : null;
 
   try {
     const kbEntry = await generateKbEntryFromPrompt(prompt, { mockMode });
+
+    // ✅ Metrics logging (no prompt/raw output)
+    logLLMMetrics({
+      route: '/api/kb/add',
+      model: kbEntry._meta.model,
+      latency_ms: kbEntry._meta.latency_ms,
+      success: true,
+      total_tokens: kbEntry._meta.total_tokens,
+    });
 
     const kbId = await addDoc(kbEntry.title, kbEntry.text, kbEntry.tags);
 
@@ -45,16 +60,29 @@ export async function POST(req: NextRequest) {
         text: kbEntry.text,
         tags: kbEntry.tags,
       }),
+
+      // ✅ EP09-US03 audit fields
+      llmModel: kbEntry._meta.model,
+      llmLatencyMs: kbEntry._meta.latency_ms,
+      llmTotalTokens: kbEntry._meta.total_tokens,
     });
 
     return NextResponse.json({ success: true, id: kbId }, { status: 200 });
-  } catch (err) {
+  } catch (err: any) {
     // ✅ LLM/mock output problems are client-visible (400)
     if (isLlmOutputError(err)) {
+      logLLMMetrics({
+        route: '/api/kb/add',
+        model: null,
+        latency_ms: 0,
+        success: false,
+        error: err?.message ?? String(err),
+      });
+
       return NextResponse.json({ error: 'Invalid AI output' }, { status: 400 });
     }
 
-    console.error('KB add failed:', err);
+    logError('KB add failed', { error: err?.message ?? String(err) });
     return NextResponse.json({ error: 'KB add failed' }, { status: 500 });
   }
 }
