@@ -1,4 +1,6 @@
 // lib/llm.ts
+import { z } from 'zod';
+
 import { KbEntrySchema, type KbEntry } from '@/schemas/kb.schema';
 import { ENV } from '@/lib/env';
 
@@ -326,4 +328,106 @@ function dedupeTags(tags: string[]): string[] {
     .filter((t) => /^[a-z0-9-_]{1,32}$/.test(t));
 
   return Array.from(new Set(clean));
+}
+// --- EP09-US02 additions (ASK) ---
+
+export type AskContextDoc = {
+  id: string;
+  title: string;
+  text: string;
+};
+
+const AskAnswerSchema = z
+  .object({
+    answer: z.string().min(1, 'answer is required').max(8000, 'answer too long'),
+  })
+  .strict();
+
+function buildAskPrompt(question: string, contextDocs: AskContextDoc[]): string {
+  return [
+    'You are an AI QA assistant for a knowledge base.',
+    'Answer the user question using ONLY the provided context.',
+    'If the context is insufficient, say you do not know.',
+    '',
+    'Return ONLY valid JSON (no markdown, no code fences) with EXACT keys:',
+    '{ "answer": "string" }',
+    '',
+    'CONTEXT DOCS:',
+    JSON.stringify(
+      contextDocs.map((d) => ({
+        id: d.id,
+        title: d.title,
+        text: d.text,
+      })),
+      null,
+      2,
+    ),
+    '',
+    `QUESTION:\n${question}`,
+  ].join('\n');
+}
+
+function mockAskAnswer(
+  question: string,
+  contextDocs: AskContextDoc[],
+  mockMode?: MockLLMMode,
+): unknown {
+  applyMockModeOverride(mockMode);
+
+  if (mockMode === 'schema_invalid' || shouldReturnBadOutput()) {
+    return { answer: 123 }; // schema fail
+  }
+
+  const top = contextDocs[0];
+  const hint = top ? `${top.title}` : 'no-context';
+  return {
+    answer: `Mock answer (${hint}): ${question}`.slice(0, 5000),
+  };
+}
+
+/**
+ * EP09-US02: LLM answer using top context docs.
+ * - Strict JSON only
+ * - Zod validated
+ * - Supports x-mock-llm for deterministic tests
+ */
+export async function answerQuestionFromContext(
+  question: string,
+  contextDocs: AskContextDoc[],
+  opts?: { mockMode?: string | null },
+): Promise<{ answer: string }> {
+  const q = question?.trim() ?? '';
+  if (!q) throw new Error('Question is required');
+
+  const mode = getMode();
+  const mockMode = normalizeMockMode(opts?.mockMode);
+
+  if (mode === 'mock') {
+    try {
+      return AskAnswerSchema.parse(mockAskAnswer(q, contextDocs, mockMode));
+    } catch (err) {
+      if (err instanceof LlmOutputError) throw err;
+      throw new LlmOutputError('Mock LLM output failed schema validation');
+    }
+  }
+
+  const startedAt = Date.now();
+  try {
+    const raw = await callOpenRouter({
+      prompt: buildAskPrompt(q, contextDocs),
+    });
+
+    const parsed = strictJsonParse(raw);
+    return AskAnswerSchema.parse(parsed);
+  } catch (err) {
+    console.error('[LLM ERROR]', {
+      provider: 'openrouter',
+      model: ENV.OPENROUTER_MODEL,
+      latency_ms: Date.now() - startedAt,
+      error: err,
+    });
+
+    if (err instanceof LlmOutputError) throw err;
+    throw new LlmOutputError('LLM output invalid');
+  }
 }

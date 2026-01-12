@@ -45,6 +45,17 @@ const baseSchema = z.object({
     })
     .default(false),
 
+  // ✅ Ask endpoint: enable LLM summarization (EP09-US02)
+  ASK_USE_LLM: z
+    .union([z.string(), z.boolean(), z.number()])
+    .transform((v) => {
+      if (typeof v === 'boolean') return v;
+      if (typeof v === 'number') return v !== 0;
+      const s = String(v).toLowerCase().trim();
+      return s === '1' || s === 'true' || s === 'yes';
+    })
+    .default(false),
+
   CI: z
     .union([z.string(), z.boolean(), z.number()])
     .transform((v) => {
@@ -129,6 +140,7 @@ export const ENV = {
 
   LLM_MODE: env.LLM_MODE,
   MOCK_LLM_BAD: env.MOCK_LLM_BAD,
+  ASK_USE_LLM: env.ASK_USE_LLM,
 
   EXPECTED_TITLE: env.EXPECTED_TITLE,
 
