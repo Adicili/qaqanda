@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { NextRequest } from 'next/server';
 
 vi.mock('@/lib/env', () => ({
   ENV: {
-    SESSION_SECRET: process.env.SESSION_SECRET ?? 'unit-test-session-secret',
-    // ostalo stavi minimalno da ne smeta importima
-    BASE_URL: process.env.BASE_URL ?? 'http://localhost:3000',
+    SESSION_SECRET: 'unit-test-session-secret',
+    BASE_URL: 'http://localhost:3000',
     USE_DATABRICKS_MOCK: true,
     DATABRICKS_HOST: undefined,
     DATABRICKS_TOKEN: undefined,
@@ -33,17 +33,19 @@ vi.mock('@/lib/db.queries', () => ({
 
 import { POST } from '@/app/api/ask/route';
 
-function makeReq(body: unknown, cookieValue?: string) {
-  return {
-    json: async () => body,
-    cookies: {
-      get: (name: string) => {
-        // route traži SESSION_COOKIE_NAME (qaqanda_session)
-        if (!cookieValue) return undefined;
-        return { name, value: cookieValue };
-      },
+function makeReq(body: unknown) {
+  return new NextRequest('http://localhost/api/ask', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      // cookies čitaš kroz NextRequest.cookies (Next radi parsing iz headera)
+      cookie: 'qaqanda_session=fake',
+      // test hooks
+      'x-mock-llm': '1',
+      'x-test-spy-llm': '1',
     },
-  } as any;
+    body: JSON.stringify(body),
+  });
 }
 
 describe('EP04-US02 — /api/ask (route-level)', () => {
@@ -52,9 +54,9 @@ describe('EP04-US02 — /api/ask (route-level)', () => {
   });
 
   it('EP04-US02-TC05 — No KB documents returns empty context but 200', async () => {
-    listAllMock.mockResolvedValueOnce([]); // KB empty
+    listAllMock.mockResolvedValueOnce([]);
 
-    const res = await POST(makeReq({ question: 'Any question' }, 'qaqanda_session=fake'));
+    const res = await POST(makeReq({ question: 'Any question' }));
     expect(res.status).toBe(200);
 
     const json = await res.json();
@@ -64,25 +66,20 @@ describe('EP04-US02 — /api/ask (route-level)', () => {
     expect(typeof json.latency_ms).toBe('number');
     expect(json.latency_ms).toBeGreaterThanOrEqual(0);
 
-    // logging should still happen even when KB is empty (depending on your implementation)
-    // if your route logs only on success, this should be >= 1
     expect(insertQueryMock).toHaveBeenCalledTimes(1);
   });
 
   it('EP04-US02-TC06 — Internal error returns 500 with generic message', async () => {
     listAllMock.mockRejectedValueOnce(new Error('db exploded'));
 
-    const res = await POST(makeReq({ question: 'Any question' }, 'qaqanda_session=fake'));
+    const res = await POST(makeReq({ question: 'Any question' }));
     expect(res.status).toBe(500);
 
     const json = await res.json();
     expect(json.error).toBeTruthy();
 
-    // no internal details
     expect(JSON.stringify(json).toLowerCase()).not.toContain('db exploded');
     expect(JSON.stringify(json).toLowerCase()).not.toContain('stack');
-
-    // if error happens before logging, this might be 0 — accept that unless you explicitly want otherwise
   });
 
   it('EP04-US02-TC07 — Query is logged with user, question, and latency', async () => {
@@ -98,13 +95,12 @@ describe('EP04-US02 — /api/ask (route-level)', () => {
     ]);
 
     const question = 'How do I reset my password?';
-    const res = await POST(makeReq({ question }, 'qaqanda_session=fake'));
+    const res = await POST(makeReq({ question }));
     expect(res.status).toBe(200);
 
     const json = await res.json();
     expect(typeof json.latency_ms).toBe('number');
 
-    // insertQuery(userId, question, latencyMs)
     expect(insertQueryMock).toHaveBeenCalledTimes(1);
     const [userIdArg, questionArg, latencyArg] = insertQueryMock.mock.calls[0];
 

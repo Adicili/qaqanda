@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { ensureUser } from '../support/auth-api';
+import { KB_ADD_ENDPOINT } from '../support/kb-api';
 
 import { ENV } from '@/lib/env';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
@@ -67,7 +68,7 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection', () => {
    * - LEAD user hitting /api/kb/add
    * - requireLead() allows access (2xx)
    */
-  test.skip('EP02-US03-TC08 - LEAD accessing /api/kb/* is allowed', async ({ request }) => {
+  test('EP02-US03-TC08 - LEAD accessing /api/kb/* is allowed', async ({ request }) => {
     test.info().annotations.push(
       { type: 'testcase', description: 'EP02-US03-TC08' },
       { type: 'doc', description: 'docs/TESTING/EP02/Test_Cases_EP02.md' },
@@ -86,8 +87,8 @@ test.describe('EP02-US03 - Middleware & Role-Based Route Protection', () => {
     const cookie = login.headers()['set-cookie'];
     expect(cookie).toBeDefined();
 
-    const r = await request.post(KB_ENDPOINT, {
-      data: { title: 'Valid KB' },
+    const r = await request.post(KB_ADD_ENDPOINT, {
+      data: { prompt: 'Valid KB' },
       headers: { Cookie: cookie },
     });
 
